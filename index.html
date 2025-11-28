@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echoball</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- 移除外部CDN依赖，避免代理连接错误 -->
+    <style>
+        /* 简单的图标样式替代Font Awesome */
+        .fas { font-family: Arial, sans-serif; }
+        .fa-magic:before { content: "✨"; }
+        .fa-spinner:before { content: "⏳"; }
+        .fa-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fa-exclamation-triangle:before { content: "⚠️"; }
+        .fa-check:before { content: "✅"; }
+        .fa-times:before { content: "❌"; }
+        .fa-file:before { content: "📄"; }
+        .fa-image:before { content: "🖼️"; }
+        .fa-upload:before { content: "📤"; }
+        .fa-download:before { content: "📥"; }
+        .fa-copy:before { content: "📋"; }
+        .fa-history:before { content: "📚"; }
+        .fa-save:before { content: "💾"; }
+        .fa-plus:before { content: "➕"; }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="image/logo@2x.png" alt="Cohere" class="nav-brand-logo" />
+            </div>
+            <!-- 主页tab切换区域 -->
+            <div class="nav-tabs" id="navTabs">
+                <button class="nav-tab active" data-page="voice-pool" onclick="switchMainPage('voice-pool')">用户原声池</button>
+                <button class="nav-tab" data-page="problem-pool" onclick="switchMainPage('problem-pool')">问题跟进池</button>
+            </div>
+            <!-- 工作页面导航区域（返回按钮+标题） -->
+            <div class="nav-work-header" id="navWorkHeader" style="display: none;">
+                <button class="nav-back-btn" onclick="backToHome()">
+                    <img src="icon/返回-默认.svg" alt="返回" class="nav-back-icon" />
+                </button>
+                <h2 class="nav-work-title" id="navWorkTitle">AI录入原声</h2>
+            </div>
+            <div class="nav-actions">
+                <button class="nav-icon" id="searchBtn" title="搜索" data-tooltip="功能待开发，尽请期待">
+                    <img src="icon/全局搜索-默认.svg" alt="搜索" class="nav-icon-svg" />
+                </button>
+                <button class="nav-icon" id="notificationBtn" title="消息通知" data-tooltip="功能待开发，尽请期待">
+                    <img src="icon/消息通知-默认.svg" alt="消息通知" class="nav-icon-svg" />
+                </button>
+                <button class="nav-icon" id="historyBtn" title="历史记录" style="display: none;">
+                    <img src="icon/历史记录-默认.svg" alt="历史记录" class="nav-icon-svg" />
+                </button>
+                <!-- 手动录入原声页面按钮组 -->
+                <div class="nav-button-group" id="manualInputBtnGroup" style="display: none;">
+                    <button class="nav-btn nav-btn-cancel" id="manualInputCancelBtn" onclick="backToHome()">取消</button>
+                    <button class="nav-btn nav-btn-submit" id="manualInputSubmitBtn" onclick="submitManualInput()">录入</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+        <!-- 用户原声池主页 -->
+        <div class="home-page" id="voice-pool-home" style="display: none;">
+            <!-- 卡片统计区 -->
+            <div class="home-header-card">
+                <div class="home-title-section">
+                    <h1 class="home-title">用户原声池·听见用户</h1>
+                    <div class="home-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">全部原声</span>
+                            <span class="stat-value" id="voice-pool-total">682</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">待评估</span>
+                            <span class="stat-value" id="voice-pool-pending">208</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">关键反馈</span>
+                            <span class="stat-value" id="voice-pool-key">102</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">已定义为问题</span>
+                            <span class="stat-value" id="voice-pool-problem">88</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="home-actions">
+                    <button class="home-action-btn" onclick="enterManualInput('voice')">
+                        <span class="btn-icon"><img src="icon/手动录入.svg" alt="手动录入" /></span>
+                        <span class="btn-text">手动录入原声</span>
+                    </button>
+                    <button class="home-action-btn primary" onclick="enterAIIntake('voice')">
+                        <span class="btn-icon"><img src="icon/AI录入.svg" alt="AI录入" /></span>
+                        <span class="btn-text">AI录入原声</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 数据展示区 -->
+            <div class="home-data-section">
+                <!-- 子导航和筛选 -->
+                <div class="data-toolbar">
+                    <div class="data-view-tabs">
+                        <div class="view-container">
+                            <button class="view-tab active" data-view="list" data-tooltip="列表视图" title="列表视图">
+                                <img src="icon/列表视图-选中.svg" alt="列表视图" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/列表视图-未选中.svg" alt="列表视图" class="view-tab-icon view-tab-icon-inactive" />
+                            </button>
+                            <button class="view-tab" data-view="kanban" data-tooltip="看板视图" title="看板视图">
+                                <img src="icon/看板视图-选中.svg" alt="看板视图" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/看板视图-未选中.svg" alt="看板视图" class="view-tab-icon view-tab-icon-inactive" />
+                            </button>
+                        </div>
+                        <div class="filter-tabs-container">
+                            <button class="filter-tab active" data-filter="all">全部原声</button>
+                            <button class="filter-tab" data-filter="pending">待评估</button>
+                            <button class="filter-tab" data-filter="key">关键反馈</button>
+                            <button class="filter-tab" data-filter="unresolved">暂不解决</button>
+                        </div>
+                    </div>
+                    <div class="data-actions">
+                        <div class="filter-btn-wrapper">
+                            <button class="data-action-btn" id="voice-pool-group-btn" title="分组">
+                                <img src="icon/分组.svg" alt="分组" width="16" height="16" />
+                                分组
+                            </button>
+                            <!-- 分组浮窗 -->
+                            <div class="filter-popup" id="voice-pool-group-popup" style="display: none;">
+                                <div class="filter-popup-header">
+                                    <span class="filter-popup-title">分组方式</span>
+                                    <button class="filter-popup-close" id="voice-pool-group-close">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="filter-popup-content">
+                                    <div class="group-options">
+                                        <label class="group-option">
+                                            <input type="radio" name="group-by" class="group-radio" value="none" checked />
+                                            <span class="group-option-text">不分组</span>
+                                        </label>
+                                        <label class="group-option">
+                                            <input type="radio" name="group-by" class="group-radio" value="emotion" />
+                                            <span class="group-option-text">按情感分类分组</span>
+                                        </label>
+                                        <label class="group-option">
+                                            <input type="radio" name="group-by" class="group-radio" value="module" />
+                                            <span class="group-option-text">按所属模块分组</span>
+                                        </label>
+                                        <label class="group-option">
+                                            <input type="radio" name="group-by" class="group-radio" value="status" />
+                                            <span class="group-option-text">按状态分组</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="filter-popup-footer">
+                                    <button class="filter-btn filter-btn-apply" id="voice-pool-group-apply">应用</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="filter-btn-wrapper">
+                            <button class="data-action-btn" id="voice-pool-filter-btn" title="筛选">
+                                <img src="icon/筛选.svg" alt="筛选" width="16" height="16" />
+                                筛选
+                            </button>
+                            <!-- 筛选浮窗 -->
+                            <div class="filter-popup" id="voice-pool-filter-popup" style="display: none;">
+                                <div class="filter-popup-header">
+                                    <span class="filter-popup-title">筛选条件</span>
+                                    <button class="filter-popup-close" id="voice-pool-filter-close">
+                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="filter-popup-content">
+                                    <!-- 情感分类 -->
+                                    <div class="filter-field">
+                                        <label class="filter-field-label">情感分类</label>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="emotion" value="negative" />
+                                                <span class="filter-option-text">负向</span>
+                                            </label>
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="emotion" value="neutral" />
+                                                <span class="filter-option-text">中性</span>
+                                            </label>
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="emotion" value="positive" />
+                                                <span class="filter-option-text">正向</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <!-- 所属模块 -->
+                                    <div class="filter-field">
+                                        <label class="filter-field-label">所属模块</label>
+                                        <div class="filter-options" id="voice-pool-module-options">
+                                            <!-- 模块选项将通过JavaScript动态生成 -->
+                                        </div>
+                                    </div>
+                                    <!-- 分析状态 -->
+                                    <div class="filter-field">
+                                        <label class="filter-field-label">分析状态</label>
+                                        <div class="filter-options">
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="status" value="pending" />
+                                                <span class="filter-option-text">待评估</span>
+                                            </label>
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="status" value="key" />
+                                                <span class="filter-option-text">关键反馈</span>
+                                            </label>
+                                            <label class="filter-option">
+                                                <input type="checkbox" class="filter-checkbox" data-filter="status" value="unresolved" />
+                                                <span class="filter-option-text">暂不解决</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="filter-popup-footer">
+                                    <button class="filter-btn filter-btn-reset" id="voice-pool-filter-reset">重置</button>
+                                    <button class="filter-btn filter-btn-apply" id="voice-pool-filter-apply">应用</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="data-search">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="search-icon">
+                                <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <input type="text" placeholder="请输入关键词进行搜索" class="search-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 列表视图 -->
+                <div class="data-table-container" id="voice-pool-list-view">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-checkbox"></th>
+                                <th class="col-summary">原声总结</th>
+                                <th class="col-emotion">情感分类</th>
+                                <th class="col-module">所属模块</th>
+                                <th class="col-issues">关联问题</th>
+                                <th class="col-status">分析状态</th>
+                                <th class="col-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="voice-pool-table-body">
+                            <!-- 表格数据将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 看板视图 -->
+                <div class="kanban-container" id="voice-pool-kanban-view" style="display: none;">
+                    <div class="kanban-column" data-status="pending">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">待评估</h3>
+                        </div>
+                        <div class="kanban-column-content" id="kanban-column-pending">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                    <div class="kanban-column" data-status="key">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">关键反馈</h3>
+                        </div>
+                        <div class="kanban-column-content" id="kanban-column-key">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                    <div class="kanban-column" data-status="unresolved">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">暂不解决</h3>
+                        </div>
+                        <div class="kanban-column-content" id="kanban-column-unresolved">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 问题跟进池主页 -->
+        <div class="home-page" id="problem-pool-home" style="display: none;">
+            <!-- 卡片统计区 -->
+            <div class="home-header-card">
+                <div class="home-title-section">
+                    <h1 class="home-title">问题跟进池·追踪问题</h1>
+                    <div class="home-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">全部问题</span>
+                            <span class="stat-value" id="problem-pool-total">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">待处理</span>
+                            <span class="stat-value" id="problem-pool-pending">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">处理中</span>
+                            <span class="stat-value" id="problem-pool-processing">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">已解决</span>
+                            <span class="stat-value" id="problem-pool-resolved">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="home-actions">
+                    <button class="home-action-btn" onclick="enterManualInput('problem')">
+                        <span class="btn-icon"><img src="icon/手动录入.svg" alt="手动录入" /></span>
+                        <span class="btn-text">手动录入问题</span>
+                    </button>
+                    <button class="home-action-btn primary" onclick="enterAIIntake('problem')">
+                        <span class="btn-icon"><img src="icon/AI录入.svg" alt="AI录入" /></span>
+                        <span class="btn-text">AI录入走查问题</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 数据展示区 -->
+            <div class="home-data-section">
+                <!-- 子导航和筛选 -->
+                <div class="data-toolbar">
+                    <div class="data-view-tabs">
+                        <div class="view-container">
+                            <button class="view-tab active" data-view="list" data-tooltip="列表视图" title="列表视图">
+                                <img src="icon/列表视图-选中.svg" alt="列表视图" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/列表视图-未选中.svg" alt="列表视图" class="view-tab-icon view-tab-icon-inactive" />
+                            </button>
+                            <button class="view-tab" data-view="kanban" data-tooltip="看板视图" title="看板视图">
+                                <img src="icon/看板视图-选中.svg" alt="看板视图" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/看板视图-未选中.svg" alt="看板视图" class="view-tab-icon view-tab-icon-inactive" />
+                            </button>
+                        </div>
+                        <div class="view-container">
+                            <button class="view-tab active" data-problem-type="feedback" data-tooltip="用户反馈类" title="用户反馈类">
+                                <img src="icon/用户反馈类-选中.svg" alt="用户反馈类" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/用户反馈类-未选中.svg" alt="用户反馈类" class="view-tab-icon view-tab-icon-inactive" />
+                                <span class="view-tab-text">用户反馈类</span>
+                            </button>
+                            <button class="view-tab" data-problem-type="design" data-tooltip="设计走查类" title="设计走查类">
+                                <img src="icon/设计走查类-选中.svg" alt="设计走查类" class="view-tab-icon view-tab-icon-active" />
+                                <img src="icon/设计走查类-未选中.svg" alt="设计走查类" class="view-tab-icon view-tab-icon-inactive" />
+                                <span class="view-tab-text">设计走查类</span>
+                            </button>
+                        </div>
+                        <div class="filter-tabs-container">
+                            <button class="filter-tab active" data-filter="all">全部问题</button>
+                            <button class="filter-tab" data-filter="pending">待确认</button>
+                            <button class="filter-tab" data-filter="processing">开发中</button>
+                            <button class="filter-tab" data-filter="review">待走查</button>
+                            <button class="filter-tab" data-filter="resolved">已解决</button>
+                        </div>
+                    </div>
+                    <div class="data-actions">
+                        <div class="filter-btn-wrapper">
+                            <button class="data-action-btn" title="分组">
+                                <img src="icon/分组.svg" alt="分组" width="16" height="16" />
+                                分组
+                            </button>
+                        </div>
+                        <div class="filter-btn-wrapper">
+                            <button class="data-action-btn" title="筛选">
+                                <img src="icon/筛选.svg" alt="筛选" width="16" height="16" />
+                                筛选
+                            </button>
+                        </div>
+                        <div class="data-search">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="search-icon">
+                                <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M11 11L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            <input type="text" placeholder="请输入关键词进行搜索" class="search-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 列表视图 -->
+                <div class="data-table-container" id="problem-pool-list-view">
+                    <table class="data-table">
+                        <thead id="problem-pool-table-head">
+                            <tr>
+                                <th class="col-checkbox"></th>
+                                <th class="col-title">问题标题</th>
+                                <th class="col-related-sound">关联原声</th>
+                                <th class="col-region">所属地区</th>
+                                <th class="col-terminal">归属终端</th>
+                                <th class="col-assignee">指派给</th>
+                                <th class="col-resolution-status">解决状态</th>
+                                <th class="col-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="problem-pool-table-body">
+                            <!-- 表格数据将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 看板视图 -->
+                <div class="kanban-container" id="problem-pool-kanban-view" style="display: none;">
+                    <div class="kanban-column" data-status="pending">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">待确认</h3>
+                        </div>
+                        <div class="kanban-column-content" id="problem-kanban-column-pending">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                    <div class="kanban-column" data-status="processing">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">开发中</h3>
+                        </div>
+                        <div class="kanban-column-content" id="problem-kanban-column-processing">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                    <div class="kanban-column" data-status="review">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">待走查</h3>
+                        </div>
+                        <div class="kanban-column-content" id="problem-kanban-column-review">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                    <div class="kanban-column" data-status="resolved">
+                        <div class="kanban-column-header">
+                            <h3 class="kanban-column-title">已解决</h3>
+                        </div>
+                        <div class="kanban-column-content" id="problem-kanban-column-resolved">
+                            <!-- 卡片将通过JavaScript动态填充 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工作页面容器 (原模板页面) -->
+        <div class="work-page" id="work-page-container" style="display: none;">
+
+        <!-- 左侧输入区域 -->
+        <section class="input-section">
+        <div class="input-container">
+
+            <!-- 输入类型选择（AI录入走查问题页顶栏） -->
+            <div class="input-group" id="designInputTypeGroup">
+                <div class="input-type-header" id="designInputTypeHeader">
+                    <div class="input-type-tabs">
+                        <button class="input-type-tab active" data-type="problem">
+                            <img src="icon/文本原声-选中.svg" alt="" class="input-type-tab-icon" aria-hidden="true" data-active-icon="icon/文本原声-选中.svg" data-inactive-icon="icon/文本原声-未选中.svg">
+                            <span>走查问题</span>
+                        </button>
+                    </div>
+                    <button class="new-session-btn" id="newDesignSessionBtn">
+                        <img src="icon/新会话-默认.svg" alt="新会话" class="new-session-icon" />
+                    </button>
+                </div>
+            </div>
+
+            <!-- 卡片1：体验问题描述 -->
+            <div class="input-card" id="designIssueCard">
+                <div class="input-group" id="designInputGroup">
+                    <div class="input-label-row">
+                        <label for="issueDescription" class="input-label">
+                            体验问题描述
+                        </label>
+                        <button
+                            type="button"
+                            class="quick-try-btn"
+                            id="designIssueQuickTryBtn"
+                        >
+                            <span class="quick-try-btn-icon" aria-hidden="true"></span>
+                            快速试用
+                        </button>
+                    </div>
+                        <div class="textarea-container">
+                            <textarea 
+                                id="issueDescription" 
+                                class="textarea-input antd-style" 
+                                placeholder="请在此描述您发现的体验问题与对应的解决方案，不少于10个字~使用标点符号如[；][。]分隔问题与解决方案，会更快更精准的生成喔~"
+                                rows="6"
+                            ></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 用户原声清洗输入区域 -->
+                <div class="original-sound-input" id="originalSoundInputGroup" style="display: none;">
+                    <div class="input-container">
+                        <!-- 输入类型选择 -->
+                        <div class="input-group">
+                            <div class="input-type-header">
+                                <div class="input-type-tabs">
+                                    <button class="input-type-tab active" data-type="text">
+                                        <img src="icon/文本原声-选中.svg" alt="" class="input-type-tab-icon" aria-hidden="true" data-active-icon="icon/文本原声-选中.svg" data-inactive-icon="icon/文本原声-未选中.svg">
+                                        <span>文本原声</span>
+                                    </button>
+                                    <button class="input-type-tab" data-type="excel">
+                                        <img src="icon/excel原声-未选中.svg" alt="" class="input-type-tab-icon" aria-hidden="true" data-active-icon="icon/excel原声-选中.svg" data-inactive-icon="icon/excel原声-未选中.svg">
+                                        <span>Excel文件</span>
+                                    </button>
+                                </div>
+                                <button class="new-session-btn" id="newOriginalSoundSessionBtn">
+                                    <img src="icon/新会话-默认.svg" alt="新会话" class="new-session-icon" />
+                                </button>
+                            </div>
+                        </div>
+
+                    <!-- 用户原声卡片 -->
+                    <div class="input-card" id="userOriginalSoundCard">
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <label for="originalSoundText" class="input-label">
+                                    用户原声
+                                </label>
+                                <button 
+                                    type="button" 
+                                    class="quick-try-btn" 
+                                    id="originalSoundQuickTryBtn"
+                                >
+                                    <span class="quick-try-btn-icon" aria-hidden="true"></span>
+                                    快速试用
+                                </button>
+                            </div>
+                            <div class="textarea-container">
+                                <textarea 
+                                    id="originalSoundText" 
+                                    class="textarea-input antd-style" 
+                                    placeholder="请输入用户原声内容..."
+                                    rows="6"
+                                ></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 语言切换卡片 -->
+                    <div class="input-card" id="languageSwitchCard">
+                        <div class="language-switch-grid">
+                            <div class="language-field">
+                                <label class="language-label" for="sourceLanguageSelect">源语言</label>
+                                <select id="sourceLanguageSelect" name="sourceLanguage" class="language-select">
+                                    <option value="葡语" selected>葡萄牙语</option>
+                                    <option value="西语">西班牙语</option>
+                                    <option value="英语">英语</option>
+                                </select>
+                            </div>
+                            <div class="language-field">
+                                <label class="language-label" for="targetLanguageSelect">目标语言</label>
+                                <select id="targetLanguageSelect" name="targetLanguage" class="language-select">
+                                    <option value="中文" selected>简体中文</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                    </div>
+                </div>
+
+                <!-- 卡片2：相关图片 -->
+                <div class="input-card">
+                    <div class="input-group" id="designFileUploadGroup">
+                        <label class="input-label">相关图片</label>
+                        <div class="file-upload-area antd-style" id="fileUploadArea" tabindex="0">
+                            <div class="upload-content">
+                                <p class="upload-text">Ctrl+V 粘贴图片至此处</p>
+                                <p class="upload-text">或点击、拖拽文件至此处上传</p>
+                            </div>
+                            <input type="file" id="fileInput" accept="image/*,video/*" multiple style="display: none;">
+                        </div>
+                        <!-- 动态图片显示区域 -->
+                        <div class="uploaded-images-container" id="uploadedImagesContainer">
+                            <!-- 上传的图片将动态显示在这里 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 卡片3：所属地区和归属终端 -->
+                <div class="input-card">
+                    <div class="input-group" id="designSystemTypeGroup">
+                        <label class="input-label">所属地区</label>
+                        <div class="checkbox-group antd-style" id="systemTypeSelect">
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="BR" name="systemType" checked>
+                                <span class="checkbox-label">BR</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="SSL" name="systemType">
+                                <span class="checkbox-label">SSL</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-group" id="designModuleGroup">
+                        <label class="input-label">归属终端</label>
+                        <div class="checkbox-group antd-style" id="moduleSelect">
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="管理端" name="module">
+                                <span class="checkbox-label">管理端</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="门店端" name="module">
+                                <span class="checkbox-label">门店端</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" value="移动端" name="module">
+                                <span class="checkbox-label">移动端</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 转化按钮 -->
+                <div class="convert-section">
+                    <button class="convert-btn antd-style" id="convertBtn">
+                        <i class="fas fa-magic"></i>
+                        一键转化
+                    </button>
+                    <button class="convert-btn antd-style" id="originalSoundConvertBtn" style="display: none;">
+                        <i class="fas fa-microphone"></i>
+                        一键转化
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右侧预览区域 -->
+        <section class="preview-section">
+            <div class="preview-container">
+                <!-- 预览标题栏 -->
+                <div class="preview-header">
+                    <h2 class="preview-title">预览</h2>
+                    <!-- 设计体验问题模板按钮组 -->
+                    <div class="preview-actions" id="designPreviewActions" style="display: none;">
+                        <button class="preview-action-btn" onclick="saveToDraft()">
+                            <img src="icon/保存-默认.svg" alt="保存" class="preview-action-icon" />
+                        </button>
+                    </div>
+                    
+                    <!-- 文本原声清洗模板按钮组 -->
+                    <div class="preview-actions" id="textPreviewActions" style="display: none;">
+                        <button class="preview-action-btn" onclick="copyExcelWithImages()" title="一键复制到Excel">
+                            <img src="icon/复制-默认.svg" alt="复制到Excel" class="preview-action-icon" />
+                        </button>
+                        <div class="preview-action-divider"></div>
+                        <button class="preview-action-btn" onclick="saveToDraft()">
+                            <img src="icon/保存-默认.svg" alt="保存" class="preview-action-icon" />
+                        </button>
+                    </div>
+                    
+                    <!-- Excel文件清洗模板按钮组 -->
+                    <div class="preview-actions" id="excelPreviewActions" style="display: none;">
+                        <button class="preview-action-btn" onclick="downloadExcelFile()" title="下载处理后的Excel文件">
+                            <img src="icon/下载转化好的excel文件-默认.svg" alt="下载Excel文件" class="preview-action-icon" />
+                        </button>
+                        <div class="preview-action-divider"></div>
+                        <button class="preview-action-btn" onclick="saveToDraft()" title="保存到草稿箱">
+                            <img src="icon/保存-默认.svg" alt="保存" class="preview-action-icon" />
+                        </button>
+                    </div>
+                </div>
+                <!-- 预览内容区 -->
+                <div class="preview-content" id="previewContent">
+                    <!-- 空状态占位符 -->
+                    <div class="preview-empty-state" id="previewEmptyState">
+                        <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
+                        <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 手动录入原声页面容器 -->
+        <div class="manual-input-container" id="manualInputContainer" style="display: none;">
+            <!-- 原声详情部分 -->
+            <div class="manual-input-section">
+                <h3 class="section-title">原声详情</h3>
+                <div class="section-content">
+                    <!-- 语言选择行 -->
+                    <div class="language-select-row">
+                        <div class="language-select-item">
+                            <div class="language-select-wrapper">
+                                <span class="select-field-label">目标语言</span>
+                                <select class="language-select inline-select" id="manualTargetLanguage">
+                                <option value="简体中文">简体中文</option>
+                                <option value="繁体中文">繁体中文</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 原声详情和转译输入框 -->
+                    <div class="text-input-row">
+                        <div class="text-input-item">
+                            <label class="text-input-label">原声详情<span class="required-asterisk">*</span></label>
+                            <textarea class="manual-textarea" id="manualOriginalText" placeholder="请输入原声详情..."></textarea>
+                            <div class="manual-input-error-message" id="manualOriginalTextError" style="display: none;"></div>
+                        </div>
+                        <span class="arrow-icon">→</span>
+                        <div class="text-input-item">
+                            <label class="text-input-label">原声转译</label>
+                            <textarea class="manual-textarea" id="manualTranslatedText" placeholder="请输入原声转译..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 原声分析部分 -->
+            <div class="manual-input-section">
+                <h3 class="section-title">原声分析</h3>
+                <div class="section-content">
+                    <div class="analysis-row">
+                        <div class="analysis-item">
+                            <label class="analysis-label">情感分类<span class="required-asterisk">*</span></label>
+                            <select class="analysis-select" id="manualSentiment">
+                                <option value="">请选择</option>
+                                <option value="负向">负向</option>
+                                <option value="中性">中性</option>
+                                <option value="正向">正向</option>
+                            </select>
+                            <div class="manual-input-error-message" id="manualSentimentError" style="display: none;"></div>
+                        </div>
+                        <div class="analysis-item">
+                            <label class="analysis-label">所属模块<span class="required-asterisk">*</span></label>
+                            <select class="analysis-select" id="manualModule">
+                                <option value="基础功能">基础功能</option>
+                                <option value="骑手配送">骑手配送</option>
+                                <option value="订单相关">订单相关</option>
+                                <option value="点餐体验">点餐体验</option>
+                                <option value="商家经营">商家经营</option>
+                                <option value="履约流程">履约流程</option>
+                            </select>
+                            <div class="manual-input-error-message" id="manualModuleError" style="display: none;"></div>
+                        </div>
+                        <div class="analysis-item status-item">
+                            <label class="analysis-label">分析状态</label>
+                            <div class="status-select-wrapper">
+                                <select class="analysis-select status-select" id="manualAnalysisStatus">
+                                    <option value="待评估" selected>待评估</option>
+                                    <option value="关键反馈">关键反馈</option>
+                                    <option value="暂不解决">暂不解决</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 原声总结和重点分析文本域 -->
+                    <div class="analysis-textarea-row">
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">原声总结<span class="required-asterisk">*</span></label>
+                            <textarea class="manual-textarea" id="manualSummary" placeholder="请输入原声总结..."></textarea>
+                            <div class="manual-input-error-message" id="manualSummaryError" style="display: none;"></div>
+                        </div>
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">重点分析</label>
+                            <textarea class="manual-textarea" id="manualKeyAnalysis" placeholder="请输入重点分析..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 手动录入问题页面容器 -->
+        <div class="manual-input-container" id="manualProblemInputContainer" style="display: none;">
+            <!-- 问题类型切换 -->
+            <div class="view-container manual-problem-type-container" style="margin-bottom: 20px;">
+                <button class="view-tab active" data-problem-type="feedback" data-tooltip="用户反馈类" title="用户反馈类">
+                    <img src="icon/用户反馈类-选中.svg" alt="用户反馈类" class="view-tab-icon view-tab-icon-active" />
+                    <img src="icon/用户反馈类-未选中.svg" alt="用户反馈类" class="view-tab-icon view-tab-icon-inactive" />
+                    <span class="view-tab-text">用户反馈类</span>
+                </button>
+                <button class="view-tab" data-problem-type="design" data-tooltip="设计走查类" title="设计走查类">
+                    <img src="icon/设计走查类-选中.svg" alt="设计走查类" class="view-tab-icon view-tab-icon-active" />
+                    <img src="icon/设计走查类-未选中.svg" alt="设计走查类" class="view-tab-icon view-tab-icon-inactive" />
+                    <span class="view-tab-text">设计走查类</span>
+                </button>
+            </div>
+            
+            <!-- 用户反馈类内容 -->
+            <div id="manualProblemFeedbackContent">
+                <!-- 基本信息部分 -->
+                <div class="manual-input-section">
+                <h3 class="section-title">基本信息</h3>
+                <div class="section-content">
+                    <div class="analysis-row">
+                        <div class="analysis-item problem-basic-field">
+                            <label class="analysis-label">所属地区<span class="required-asterisk">*</span></label>
+                            <div class="checkbox-group antd-style" id="manualProblemRegion">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" value="BR" name="manualProblemRegion">
+                                    <span class="checkbox-label">BR</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" value="SSL" name="manualProblemRegion">
+                                    <span class="checkbox-label">SSL</span>
+                                </label>
+                            </div>
+                            <div class="manual-input-error-message" id="manualProblemRegionError" style="display: none;"></div>
+                        </div>
+                        <div class="analysis-item problem-basic-field terminal-field">
+                            <label class="analysis-label">归属终端<span class="required-asterisk">*</span></label>
+                            <div class="checkbox-group antd-style" id="manualProblemTerminal">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" value="管理端" name="manualProblemTerminal">
+                                    <span class="checkbox-label">管理端</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" value="门店端" name="manualProblemTerminal">
+                                    <span class="checkbox-label">门店端</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" value="移动端" name="manualProblemTerminal">
+                                    <span class="checkbox-label">移动端</span>
+                                </label>
+                            </div>
+                            <div class="manual-input-error-message" id="manualProblemTerminalError" style="display: none;"></div>
+                        </div>
+                    </div>
+                    <div class="analysis-row">
+                        <div class="analysis-item">
+                            <label class="analysis-label">指派给</label>
+                            <select class="analysis-select" id="manualProblemAssignee">
+                                <option value="">请选择指派给</option>
+                                <option value="Amy">Amy</option>
+                                <option value="Bob">Bob</option>
+                                <option value="Charlie">Charlie</option>
+                            </select>
+                        </div>
+                        <div class="analysis-item status-item">
+                            <label class="analysis-label">解决状态</label>
+                            <div class="status-select-wrapper">
+                                <select class="analysis-select status-select" id="manualProblemResolutionStatus">
+                                    <option value="待确认" selected>待确认</option>
+                                    <option value="开发中">开发中</option>
+                                    <option value="待走查">待走查</option>
+                                    <option value="已解决">已解决</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容详情部分 -->
+            <div class="manual-input-section">
+                <h3 class="section-title">内容详情</h3>
+                <div class="section-content">
+                    <!-- 问题标题 -->
+                    <div class="analysis-textarea-row first-textarea-row">
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">问题标题<span class="required-asterisk">*</span></label>
+                            <input type="text" class="manual-textarea" id="manualProblemTitle" placeholder="请输入问题标题..." style="height: auto; min-height: 40px;" />
+                            <div class="manual-input-error-message" id="manualProblemTitleError" style="display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 问题描述 -->
+                    <div class="analysis-textarea-row">
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">问题描述<span class="required-asterisk">*</span></label>
+                            <textarea class="manual-textarea" id="manualProblemDescription" placeholder="请输入问题描述..." style="height: 100px;"></textarea>
+                            <div class="manual-input-error-message" id="manualProblemDescriptionError" style="display: none;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 关联原声 -->
+                    <div class="analysis-textarea-row">
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">关联原声</label>
+                            <select class="analysis-select" id="manualProblemRelatedSound" style="width: 100%;">
+                                <option value="">请选择关联原声</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 上传附件 -->
+                    <div class="analysis-textarea-row">
+                        <div class="analysis-textarea-item">
+                            <label class="analysis-label">上传附件</label>
+                            <div class="file-upload-area antd-style" id="manualProblemFileUploadArea" tabindex="0" style="margin-top: 8px;">
+                                <div class="upload-content">
+                                    <p class="upload-text">请点击此处进行上传</p>
+                                </div>
+                                <input type="file" id="manualProblemFileInput" accept="image/*,video/*" multiple style="display: none;">
+                            </div>
+                            <!-- 动态文件显示区域 -->
+                            <div class="uploaded-images-container" id="manualProblemUploadedFilesContainer">
+                                <!-- 上传的文件将动态显示在这里 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+            <!-- 设计走查类内容 -->
+            <div id="manualProblemDesignContent" style="display: none;">
+                <!-- 基本信息部分 -->
+                <div class="manual-input-section">
+                    <h3 class="section-title">基本信息</h3>
+                    <div class="section-content">
+                        <div class="analysis-row">
+                            <div class="analysis-item problem-basic-field">
+                                <label class="analysis-label">所属地区<span class="required-asterisk">*</span></label>
+                                <div class="checkbox-group antd-style" id="manualProblemDesignRegion">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="BR" name="manualProblemDesignRegion">
+                                        <span class="checkbox-label">BR</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="SSL" name="manualProblemDesignRegion">
+                                        <span class="checkbox-label">SSL</span>
+                                    </label>
+                                </div>
+                                <div class="manual-input-error-message" id="manualProblemDesignRegionError" style="display: none;"></div>
+                            </div>
+                            <div class="analysis-item problem-basic-field terminal-field">
+                                <label class="analysis-label">归属终端<span class="required-asterisk">*</span></label>
+                                <div class="checkbox-group antd-style" id="manualProblemDesignTerminal">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="管理端" name="manualProblemDesignTerminal">
+                                        <span class="checkbox-label">管理端</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="门店端" name="manualProblemDesignTerminal">
+                                        <span class="checkbox-label">门店端</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" value="移动端" name="manualProblemDesignTerminal">
+                                        <span class="checkbox-label">移动端</span>
+                                    </label>
+                                </div>
+                                <div class="manual-input-error-message" id="manualProblemDesignTerminalError" style="display: none;"></div>
+                            </div>
+                        </div>
+                        <div class="analysis-row design-second-row">
+                            <div class="analysis-item">
+                                <label class="analysis-label">问题类型<span class="required-asterisk">*</span></label>
+                                <select class="analysis-select" id="manualProblemDesignType">
+                                    <option value="">请选择问题类型</option>
+                                    <option value="视觉还原bug">视觉还原bug</option>
+                                    <option value="交互问题">交互问题</option>
+                                    <option value="设计规范问题">设计规范问题</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                                <div class="manual-input-error-message" id="manualProblemDesignTypeError" style="display: none;"></div>
+                            </div>
+                            <div class="analysis-item">
+                                <label class="analysis-label">优先级</label>
+                                <select class="analysis-select" id="manualProblemDesignPriority">
+                                    <option value="">请选择优先级</option>
+                                    <option value="P0">P0</option>
+                                    <option value="P1">P1</option>
+                                    <option value="P2">P2</option>
+                                    <option value="P3">P3</option>
+                                </select>
+                            </div>
+                            <div class="analysis-item">
+                                <label class="analysis-label">指派给<span class="required-asterisk">*</span></label>
+                                <select class="analysis-select" id="manualProblemDesignAssignee">
+                                    <option value="">请选择指派给</option>
+                                    <option value="Amy">Amy</option>
+                                    <option value="Bob">Bob</option>
+                                    <option value="Charlie">Charlie</option>
+                                </select>
+                                <div class="manual-input-error-message" id="manualProblemDesignAssigneeError" style="display: none;"></div>
+                            </div>
+                            <div class="analysis-item status-item">
+                                <label class="analysis-label">解决状态</label>
+                                <div class="status-select-wrapper">
+                                    <select class="analysis-select status-select" id="manualProblemDesignResolutionStatus">
+                                        <option value="待确认" selected>待确认</option>
+                                        <option value="开发中">开发中</option>
+                                        <option value="待走查">待走查</option>
+                                        <option value="已解决">已解决</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 内容详情部分 -->
+                <div class="manual-input-section">
+                    <h3 class="section-title">内容详情</h3>
+                    <div class="section-content">
+                        <!-- 标题 -->
+                        <div class="analysis-textarea-row first-textarea-row">
+                            <div class="analysis-textarea-item">
+                                <label class="analysis-label">标题<span class="required-asterisk">*</span></label>
+                                <input type="text" class="manual-textarea" id="manualProblemDesignTitle" placeholder="请输入标题..." style="height: auto; min-height: 40px;" />
+                                <div class="manual-input-error-message" id="manualProblemDesignTitleError" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 问题描述 -->
+                        <div class="analysis-textarea-row">
+                            <div class="analysis-textarea-item">
+                                <label class="analysis-label">问题描述<span class="required-asterisk">*</span></label>
+                                <textarea class="manual-textarea" id="manualProblemDesignDescription" placeholder="请输入问题描述..." style="height: 100px;"></textarea>
+                                <div class="manual-input-error-message" id="manualProblemDesignDescriptionError" style="display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- 解决方案 -->
+                        <div class="analysis-textarea-row">
+                            <div class="analysis-textarea-item">
+                                <label class="analysis-label">解决方案<span class="required-asterisk">*</span></label>
+                                <textarea class="manual-textarea" id="manualProblemDesignSolution" placeholder="请输入解决方案..."></textarea>
+                                <div class="manual-input-error-message" id="manualProblemDesignSolutionError" style="display: none;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 相关图片部分 -->
+                <div class="manual-input-section">
+                    <h3 class="section-title">相关图片</h3>
+                    <div class="section-content">
+                        <div class="analysis-textarea-row first-textarea-row">
+                            <div class="analysis-textarea-item">
+                                <div class="file-upload-area antd-style" id="manualProblemDesignFileUploadArea" tabindex="0">
+                                    <div class="upload-content">
+                                        <p class="upload-text">请点击此处进行上传</p>
+                                    </div>
+                                    <input type="file" id="manualProblemDesignFileInput" accept="image/*,video/*" multiple style="display: none;">
+                                </div>
+                                <!-- 动态文件显示区域 -->
+                                <div class="uploaded-images-container" id="manualProblemDesignUploadedFilesContainer">
+                                    <!-- 上传的文件将动态显示在这里 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <!-- 工作页面容器结束 -->
+    </main>
+
+    <!-- 加载状态模态框 -->
+    <div class="loading-modal" id="loadingModal">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>正在智能转化中...</p>
+        </div>
+    </div>
+
+    <!-- 移除外部依赖，避免代理连接错误 -->
+    <!-- SheetJS库用于前端Excel生成 -->
+    <script src="xlsx.full.min.js"></script>
+    <script src="script.js?v=20241228-019"></script>
+</body>
+</html>

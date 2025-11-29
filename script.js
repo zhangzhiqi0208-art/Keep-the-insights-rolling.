@@ -497,14 +497,14 @@ function enterAIIntake(type) {
             // 隐藏logo
             const navBrand = document.querySelector('.nav-brand');
             if (navBrand) navBrand.style.display = 'none';
-            // 隐藏搜索和通知按钮，只显示历史记录按钮，隐藏手动录入按钮组
+            // 隐藏搜索、通知和历史记录按钮，隐藏手动录入按钮组
             const searchBtn = document.getElementById('searchBtn');
             const notificationBtn = document.getElementById('notificationBtn');
             const historyBtn = document.getElementById('historyBtn');
             const manualInputBtnGroup = document.getElementById('manualInputBtnGroup');
             if (searchBtn) searchBtn.style.display = 'none';
             if (notificationBtn) notificationBtn.style.display = 'none';
-            if (historyBtn) historyBtn.style.display = 'flex';
+            if (historyBtn) historyBtn.style.display = 'none';
             if (manualInputBtnGroup) manualInputBtnGroup.style.display = 'none';
 
             // 隐藏走查问题页的输入类型头部（只在AI录入走查问题页展示）
@@ -525,14 +525,14 @@ function enterAIIntake(type) {
             // 隐藏logo（与AI录入原声页面保持一致）
             const navBrand = document.querySelector('.nav-brand');
             if (navBrand) navBrand.style.display = 'none';
-            // 隐藏搜索和通知按钮，只显示历史记录按钮（与AI录入原声页面保持一致），隐藏手动录入按钮组
+            // 隐藏搜索、通知和历史记录按钮（与AI录入原声页面保持一致），隐藏手动录入按钮组
             const searchBtn = document.getElementById('searchBtn');
             const notificationBtn = document.getElementById('notificationBtn');
             const historyBtn = document.getElementById('historyBtn');
             const manualInputBtnGroup = document.getElementById('manualInputBtnGroup');
             if (searchBtn) searchBtn.style.display = 'none';
             if (notificationBtn) notificationBtn.style.display = 'none';
-            if (historyBtn) historyBtn.style.display = 'flex';
+            if (historyBtn) historyBtn.style.display = 'none';
             if (manualInputBtnGroup) manualInputBtnGroup.style.display = 'none';
 
             // 显示走查问题页的输入类型头部
@@ -749,16 +749,41 @@ function mapLanguageForAPI(language) {
 
 // 获取情感分类显示HTML（统一的样式：文字+icon）
 function getSentimentDisplayHTML(sentimentValue) {
+    // 提取纯分类值，去掉强度描述（如"负向·强烈" -> "负向"）
+    let cleanValue = (sentimentValue || '').toString().trim();
+    
+    // 如果包含分隔符（·、-、|等），只取第一部分
+    if (cleanValue.includes('·') || cleanValue.includes('-') || cleanValue.includes('|') || cleanValue.includes('、')) {
+        cleanValue = cleanValue.split(/[·\-|、]/)[0].trim();
+    }
+    
+    // 标准化映射
     const sentimentMap = {
         '负向': { icon: 'icon/负向.svg', text: '负向' },
         'negative': { icon: 'icon/负向.svg', text: '负向' },
+        'neg': { icon: 'icon/负向.svg', text: '负向' },
+        '负面': { icon: 'icon/负向.svg', text: '负向' },
         '中性': { icon: 'icon/中性.svg', text: '中性' },
         'neutral': { icon: 'icon/中性.svg', text: '中性' },
         '正向': { icon: 'icon/正向.svg', text: '正向' },
-        'positive': { icon: 'icon/正向.svg', text: '正向' }
+        'positive': { icon: 'icon/正向.svg', text: '正向' },
+        'pos': { icon: 'icon/正向.svg', text: '正向' }
     };
     
-    const sentiment = sentimentMap[sentimentValue] || { icon: 'icon/中性.svg', text: sentimentValue || '中性' };
+    // 尝试精确匹配
+    let sentiment = sentimentMap[cleanValue];
+    
+    // 如果精确匹配失败，尝试模糊匹配
+    if (!sentiment) {
+        const lowerValue = cleanValue.toLowerCase();
+        if (lowerValue.includes('neg') || lowerValue.includes('负')) {
+            sentiment = sentimentMap['负向'];
+        } else if (lowerValue.includes('pos') || lowerValue.includes('正')) {
+            sentiment = sentimentMap['正向'];
+        } else {
+            sentiment = sentimentMap['中性'];
+        }
+    }
     
     return `
         <span class="sentiment-display">
@@ -2137,7 +2162,7 @@ function updateTemplateContent(templateType) {
             previewContent.innerHTML = `
                 <div class="preview-empty-state" id="previewEmptyState">
                     <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                    <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                    <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
                 </div>
             `;
             // 清空预览区域时隐藏所有按钮
@@ -2207,7 +2232,7 @@ function updateTemplateContent(templateType) {
             previewContent.innerHTML = `
                 <div class="preview-empty-state" id="previewEmptyState">
                     <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                    <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                    <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
                 </div>
             `;
             // 清空预览区域时隐藏所有按钮
@@ -2948,6 +2973,432 @@ function setInputAreaDisabled(disabled) {
 }
 
 // 初始化
+// 初始化问题跟进池预置数据
+function initProblemPoolPresetData() {
+    // 预置数据
+    const presetData = [
+        {
+            "id": "preset_problem_1764430575694_0",
+            "problemType": "design",
+            "title": "banner卡片采用直角设计、破坏了视觉统一性",
+            "priority": "P1-高",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["管理端"],
+            "assignTo": "Amy",
+            "resolutionStatus": "待确认",
+            "description": "截图区域采用直角设计，与整体界面圆角设计语言不一致，破坏了视觉统一性和品牌调性，给用户带来不协调的视觉体验",
+            "solution": "添加圆角样式，建议采用与整体设计系统一致的圆角半径（如8px），确保视觉风格统一且符合现代界面设计趋势",
+            "createdAt": "2025-11-29T23:36:15.694146",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_1",
+            "problemType": "design",
+            "title": "弹窗尺寸过宽、超出合理的交互区域范围",
+            "priority": "P2-中",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["管理端"],
+            "assignTo": "Amy",
+            "resolutionStatus": "待确认",
+            "description": "弹窗宽度设计过大，超出了用户合理的视觉和交互范围，导致用户需要频繁横向移动视线和鼠标才能完成操作，降低了操作效率和用户体验。特别是在管理端场景下，频繁的弹窗操作会显著影响工作效率。",
+            "solution": "重新设计弹窗尺寸规范，将宽度控制在合理范围内（建议不超过屏幕宽度的60%），优化内容布局和间距，确保核心信息和操作区域在用户自然视线范围内。预期效果是提升操作便捷性和视觉舒适度，减少不必要的交互负担。",
+            "createdAt": "2025-11-29T23:36:15.694152",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_2",
+            "problemType": "design",
+            "title": "不开浏览器检查的话，看不到收缩效果，屏幕尺寸获取的方式需要调整",
+            "priority": "P0-紧急",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["管理端"],
+            "assignTo": "Amy",
+            "resolutionStatus": "待确认",
+            "description": "页面响应式布局的收缩效果无法正常触发布局切换效果，表明当前屏幕尺寸获取机制存在缺陷，导致断点检测功能失效",
+            "solution": "优化屏幕尺寸监听机制，采用更可靠的视口尺寸检测方法，确保在不同屏幕尺寸下响应式布局能够正确切换，同时增加布局切换时的过渡动画效果，提升用户对界面变化的感知度",
+            "createdAt": "2025-11-29T23:36:15.694156",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_3",
+            "problemType": "design",
+            "title": "筛选选择器，唤起与收起的箭头的方向反了",
+            "priority": "P0-紧急",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR"],
+            "terminals": ["移动端"],
+            "assignTo": "Amy",
+            "resolutionStatus": "开发中",
+            "description": "筛选选择器的展开/收起箭头方向与实际状态不符，可能表现为展开状态下箭头朝下或收起状态下箭头朝上，导致用户无法准确判断当前筛选器的展开状态，影响操作体验",
+            "solution": "修正箭头方向逻辑，确保展开状态下箭头朝上，收起状态下箭头朝下，保持与用户认知一致。同时检查所有筛选器的箭头状态一致性，确保视觉反馈准确传达组件状态",
+            "createdAt": "2025-11-29T23:36:15.694160",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_4",
+            "problemType": "design",
+            "title": "在切换筛选条件后：系统显示toast提示但内容含义不清晰",
+            "priority": "P0-紧急",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR"],
+            "terminals": ["移动端"],
+            "assignTo": "Amy",
+            "resolutionStatus": "开发中",
+            "description": "用户在切换筛选条件后，系统显示toast提示但内容含义不清晰，用户无法理解该提示的具体含义和操作反馈，影响对筛选结果状态的判断",
+            "solution": "优化toast提示文案，明确说明筛选条件切换后的状态变化或操作结果。建议采用具体描述性语言，如'筛选条件已更新'或'已应用新的筛选条件'，确保用户能够清晰理解系统反馈信息",
+            "createdAt": "2025-11-29T23:36:15.694163",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_5",
+            "problemType": "design",
+            "title": "no image的筛选条件没有生效",
+            "priority": "P1-高",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["SSL"],
+            "terminals": ["移动端"],
+            "assignTo": "Bob",
+            "resolutionStatus": "开发中",
+            "description": "系统未能正确过滤数据，仍然显示包含图片的完整列表内容，导致筛选功能失效，用户无法快速定位到无图片的数据条目。",
+            "solution": "修复筛选功能逻辑，确保'no image'筛选条件能够正确识别并过滤出不含图片的数据条目。优化方案包括：1）检查筛选接口参数传递是否正确；2）验证后端数据过滤逻辑；3）在前端增加筛选结果状态提示，明确显示当前筛选条件和结果数量。预期效果：用户能够准确筛选出无图片的数据，提升数据管理效率。",
+            "createdAt": "2025-11-29T23:36:15.694166",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_6",
+            "problemType": "design",
+            "title": "不包含选项组的菜品目前也触发出了选项组下架的弹窗",
+            "priority": "P1-高",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["SSL"],
+            "terminals": ["移动端"],
+            "assignTo": "Bob",
+            "resolutionStatus": "待走查",
+            "description": "在管理端菜品管理模块中，系统错误地触发了选项组下架确认弹窗。这种误触发会导致用户困惑，误以为该菜品存在选项组需要处理，影响操作效率和用户体验。",
+            "solution": "优化弹窗触发逻辑，增加菜品选项组状态判断条件。只有当菜品确实包含选项组时，才触发选项组下架弹窗；对于普通菜品，应显示对应的普通下架确认弹窗或直接执行下架操作。预期效果是消除误触发，提升操作准确性和用户认知清晰度。",
+            "createdAt": "2025-11-29T23:36:15.694170",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_7",
+            "problemType": "design",
+            "title": "弹窗的关键操作按钮使用的颜色有误，需要改为黄色",
+            "priority": "P2-中",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["门店端"],
+            "assignTo": "Bob",
+            "resolutionStatus": "待走查",
+            "description": "弹窗中的关键操作按钮使用了错误的颜色，与设计规范不符，可能导致用户对操作意图产生误解，影响操作效率和视觉一致性",
+            "solution": "按照设计规范重新调整弹窗关键操作按钮的颜色，确保使用正确的品牌色和语义色，保持与整体设计系统的一致性，提升操作识别度和用户体验",
+            "createdAt": "2025-11-29T23:36:15.694173",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_8",
+            "problemType": "design",
+            "title": "数据列表之间的最小间距可以控制在32px",
+            "priority": "P2-中",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["门店端"],
+            "assignTo": "Bob",
+            "resolutionStatus": "已解决",
+            "description": "数据列表之间的间距缺乏统一规范，当前间距设置不合理，导致页面布局不够规整，影响信息浏览的舒适度和视觉层次感",
+            "solution": "将数据列表之间的最小间距统一控制在32px，确保信息区块之间有足够的呼吸空间，提升页面布局的规整性和信息可读性",
+            "createdAt": "2025-11-29T23:36:15.694177",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        },
+        {
+            "id": "preset_problem_1764430575694_9",
+            "problemType": "design",
+            "title": "导航二级菜单选中后样式不佳",
+            "priority": "P0-紧急",
+            "problemTypeValue": "设计需求优化",
+            "regions": ["BR", "SSL"],
+            "terminals": ["门店端"],
+            "assignTo": "Bob",
+            "resolutionStatus": "已解决",
+            "description": "导航二级菜单选中后样式不佳，导致放大后文案展示不全。",
+            "solution": "1. 优先找产品确认导航文案长度；2. 如果无法修改，尝试缩小字体。",
+            "createdAt": "2025-11-29T23:36:15.694180",
+            "attachments": [],
+            "relatedOriginalSounds": [],
+            "operationRecords": []
+        }
+    ];
+    
+    try {
+        // 获取现有数据
+        let existingData = [];
+        const stored = localStorage.getItem('definedProblems');
+        if (stored) {
+            existingData = JSON.parse(stored);
+        }
+        
+        // 用户反馈类预置数据（基于用户原声池的10条预置数据生成）
+        const feedbackPresetData = [
+            {
+                "id": "preset_feedback_1764430575694_0",
+                "problemType": "feedback",
+                "title": "骑手配送能力不足导致订单取消，影响用户体验",
+                "description": "骑手经常找不到送货地址，导致服务被取消，用户无法及时收到订单。尽管用户已通过应用程序发送了定位信息，但问题依然存在。这反映了骑手培训不足、导航系统不完善等深层问题，核心矛盾是用户对及时配送的期望与实际配送能力不足的冲突。用户期望能够通过定位信息帮助骑手准确找到地址，但系统未能有效利用这些信息。",
+                "resolutionStatus": "待确认",
+                "relatedOriginalSoundId": "preset_1764318523643_0",
+                "relatedOriginalSound": "订单分配存在延迟问题，影响配送效率",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523643_0",
+                    "summary": "订单分配存在延迟问题，影响配送效率"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694200",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_1",
+                "problemType": "feedback",
+                "title": "订单不完整问题频发，投诉处理流程复杂且无效",
+                "description": "用户多次遇到订单不完整送达的问题，但报告流程复杂，提交困难。商店的回复也没有提供实质性帮助。这反映了订单质量控制机制缺失、投诉处理流程设计不合理等深层问题。核心矛盾是用户对完整订单的期望与实际订单管理能力不足的冲突。用户期望能够便捷地报告问题并获得有效解决，但当前流程无法满足这一需求。",
+                "resolutionStatus": "待确认",
+                "relatedOriginalSoundId": "preset_1764318523644_1",
+                "relatedOriginalSound": "用户投诉订单不完整问题频发，报告流程复杂且商店回复无效，要求简化处理流程",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_1",
+                    "summary": "用户投诉订单不完整问题频发，报告流程复杂且商店回复无效，要求简化处理流程"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694201",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_2",
+                "problemType": "feedback",
+                "title": "搜索功能完全失效，搜索结果与查询内容不匹配",
+                "description": "搜索功能无法正常工作，用户搜索的内容从未出现，系统提供的选项与用户实际搜索内容完全无关。这反映了搜索算法缺陷、数据索引不完善等深层问题。核心矛盾是用户对精准搜索的期望与实际搜索功能失效的冲突。用户期望能够快速找到所需内容，但当前搜索功能无法满足基本需求。",
+                "resolutionStatus": "开发中",
+                "relatedOriginalSoundId": "preset_1764318523644_2",
+                "relatedOriginalSound": "用户反馈搜索功能完全失效，搜索结果与查询内容完全不匹配",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_2",
+                    "summary": "用户反馈搜索功能完全失效，搜索结果与查询内容完全不匹配"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端", "门店端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694202",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_3",
+                "problemType": "feedback",
+                "title": "用户高度赞扬应用服务，建议保持并优化推荐功能",
+                "description": "用户对Didi Food的服务和推荐功能表示非常满意，并表达了感谢。这反映了用户对当前服务的认可，同时也体现了推荐功能的价值。虽然这是正向反馈，但可以作为优化方向参考，进一步提升推荐算法的精准度和个性化程度。",
+                "resolutionStatus": "已解决",
+                "relatedOriginalSoundId": "preset_1764318523644_3",
+                "relatedOriginalSound": "用户高度赞扬该应用是订餐领域的最佳选择",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_3",
+                    "summary": "用户高度赞扬该应用是订餐领域的最佳选择"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694203",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_4",
+                "problemType": "feedback",
+                "title": "建议增加点餐系统特殊备注功能，满足个性化需求",
+                "description": "用户建议餐厅在点餐系统中增加特殊备注功能，方便顾客表达个性化需求。这反映了当前点餐系统功能不够完善，无法满足用户的个性化需求。核心矛盾是用户对个性化服务的期望与系统功能限制的冲突。用户期望能够通过备注功能与餐厅沟通特殊需求，但当前系统缺乏这一功能。",
+                "resolutionStatus": "待确认",
+                "relatedOriginalSoundId": "preset_1764318523644_4",
+                "relatedOriginalSound": "建议餐厅在点餐系统中增加特殊备注功能，方便顾客个性化需求",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_4",
+                    "summary": "建议餐厅在点餐系统中增加特殊备注功能，方便顾客个性化需求"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694204",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_5",
+                "problemType": "feedback",
+                "title": "配送员服务严重问题：行为霸道、订单管理混乱、退款困难",
+                "description": "配送员服务存在严重问题，包括行为霸道、同时处理多个订单导致拖延、随意取消订单、退款流程繁琐等。用户因此决定卸载应用。这反映了配送员管理机制缺失、订单分配算法不合理、退款流程设计复杂等深层问题。核心矛盾是用户对优质配送服务的期望与实际配送服务质量低下的冲突。",
+                "resolutionStatus": "开发中",
+                "relatedOriginalSoundId": "preset_1764318523644_5",
+                "relatedOriginalSound": "强烈批评配送服务，抱怨配送员行为霸道、订单处理混乱、退款过程困难，并决定卸载应用",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_5",
+                    "summary": "强烈批评配送服务，抱怨配送员行为霸道、订单处理混乱、退款过程困难，并决定卸载应用"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694205",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_6",
+                "problemType": "feedback",
+                "title": "配送员多次盗窃订单且身份信息不符，存在安全隐患",
+                "description": "配送员多次盗窃用户订单，且实际配送人员与平台显示的照片不符。这反映了配送员身份验证机制不完善、订单安全保护措施缺失等严重安全问题。核心矛盾是用户对安全配送的期望与实际配送安全漏洞的冲突。用户期望能够安全地接收订单，但当前系统存在明显的安全隐患。",
+                "resolutionStatus": "开发中",
+                "relatedOriginalSoundId": "preset_1764318523644_6",
+                "relatedOriginalSound": "配送员多次盗窃订单且身份信息不符",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_6",
+                    "summary": "配送员多次盗窃订单且身份信息不符"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694206",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_7",
+                "problemType": "feedback",
+                "title": "配送时间频繁变更，影响用户用餐安排",
+                "description": "配送时间频繁变更，承诺的送达时间会因其他订单的出现而随意改变，导致用户无法合理安排用餐时间。这反映了订单分配算法不合理、配送时间管理机制缺失等深层问题。核心矛盾是用户对稳定配送时间的期望与实际配送时间管理混乱的冲突。用户期望能够根据承诺时间安排用餐，但系统随意变更时间导致计划被打乱。",
+                "resolutionStatus": "待走查",
+                "relatedOriginalSoundId": "preset_1764318523644_7",
+                "relatedOriginalSound": "配送时间频繁变更问题，要求平台确保承诺送达时间的稳定性，避免因时间变动影响用餐",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_7",
+                    "summary": "配送时间频繁变更问题，要求平台确保承诺送达时间的稳定性，避免因时间变动影响用餐"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694207",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_8",
+                "problemType": "feedback",
+                "title": "产品质量低劣且配料不完整，与菜单描述不符",
+                "description": "产品质量非常差，点餐时菜单上列出的配料并没有全部送到，与菜单描述不符。这反映了商家质量控制机制缺失、菜单信息管理不完善等深层问题。核心矛盾是用户对完整、高质量产品的期望与实际产品质量和完整性的冲突。用户期望能够收到与菜单描述一致的产品，但实际收到的产品存在质量问题。",
+                "resolutionStatus": "待确认",
+                "relatedOriginalSoundId": "preset_1764318523644_8",
+                "relatedOriginalSound": "投诉产品质量低劣且配料不完整，与菜单描述不符",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_8",
+                    "summary": "投诉产品质量低劣且配料不完整，与菜单描述不符"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694208",
+                "attachments": [],
+                "operationRecords": []
+            },
+            {
+                "id": "preset_feedback_1764430575694_9",
+                "problemType": "feedback",
+                "title": "建议增加点餐系统特殊备注功能，提升个性化服务",
+                "description": "用户建议餐厅在点餐系统中增加特殊备注功能，方便顾客表达个性化需求。这反映了当前点餐系统功能不够完善，无法满足用户的个性化需求。核心矛盾是用户对个性化服务的期望与系统功能限制的冲突。用户期望能够通过备注功能与餐厅沟通特殊需求，但当前系统缺乏这一功能。",
+                "resolutionStatus": "待确认",
+                "relatedOriginalSoundId": "preset_1764318523644_9",
+                "relatedOriginalSound": "希望在点餐系统中增加特殊备注功能，方便顾客个性化需求",
+                "relatedOriginalSounds": [{
+                    "id": "preset_1764318523644_9",
+                    "summary": "希望在点餐系统中增加特殊备注功能，方便顾客个性化需求"
+                }],
+                "regions": ["BR", "SSL"],
+                "terminals": ["移动端"],
+                "assignTo": "",
+                "createdAt": "2025-11-29T23:36:15.694209",
+                "attachments": [],
+                "operationRecords": []
+            }
+        ];
+        
+        // 检查是否已经导入过预置数据（通过检查是否有预设ID的数据）
+        const hasDesignPresetData = existingData.some(problem => 
+            problem.id && problem.id.startsWith('preset_problem_')
+        );
+        const hasFeedbackPresetData = existingData.some(problem => 
+            problem.id && problem.id.startsWith('preset_feedback_')
+        );
+        
+        // 合并所有预置数据
+        let allPresetData = [];
+        if (!hasDesignPresetData && presetData.length > 0) {
+            allPresetData = [...allPresetData, ...presetData];
+        }
+        if (!hasFeedbackPresetData && feedbackPresetData.length > 0) {
+            allPresetData = [...allPresetData, ...feedbackPresetData];
+        }
+        
+        // 如果没有导入过，则导入
+        if (allPresetData.length > 0) {
+            // 合并数据（预置数据在前）
+            const allData = [...allPresetData, ...existingData];
+            
+            // 保存到localStorage
+            localStorage.setItem('definedProblems', JSON.stringify(allData));
+            
+            const designCount = allPresetData.filter(p => p.problemType === 'design').length;
+            const feedbackCount = allPresetData.filter(p => p.problemType === 'feedback').length;
+            console.log(`✅ 成功导入 ${allPresetData.length} 条预置数据到问题跟进池！`);
+            if (designCount > 0) console.log(`   - 设计走查类: ${designCount} 条`);
+            if (feedbackCount > 0) console.log(`   - 用户反馈类: ${feedbackCount} 条`);
+            
+            // 如果当前在问题跟进池页面，刷新显示
+            if (typeof renderProblemPoolTable === 'function' && 
+                document.getElementById('problem-pool-home') && 
+                document.getElementById('problem-pool-home').style.display !== 'none') {
+                if (currentProblemViewType === 'list') {
+                    renderProblemPoolTable();
+                } else if (currentProblemViewType === 'kanban') {
+                    renderProblemPoolKanbanView();
+                }
+                updateProblemPoolStats();
+            }
+        }
+    } catch (error) {
+        console.error('初始化问题跟进池预置数据失败:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化智能分析引擎
     SmartAnalysisEngine.initLearningCache();
@@ -2957,6 +3408,9 @@ document.addEventListener('DOMContentLoaded', function() {
     attachDesignIssueQuickTryListener();
     attachExcelQuickTryListener();
     loadDraftData();
+    
+    // 初始化问题跟进池预置数据
+    initProblemPoolPresetData();
     
     // 初始化页面显示：显示默认主页
     initPageDisplay();
@@ -3800,9 +4254,11 @@ function handleBatchDelete() {
 
 // 渲染表格行
 function renderTableRow(item, rowIndex) {
-        // 处理情感分类显示 - 使用统一的样式（文字+icon）
-    const emotionLabel = item.emotion?.label || '中性';
+        // 处理情感分类显示 - 使用统一的样式（文字+icon），只显示纯分类值，不包含强度描述
     const emotionType = item.emotion?.type || 'neutral';
+    // 只显示纯分类值：负向、中性、正向
+    const emotionLabel = emotionType === 'negative' ? '负向' : 
+                        emotionType === 'positive' ? '正向' : '中性';
         const emotionIcon = emotionType === 'negative' ? 'icon/负向.svg' : 
                            emotionType === 'positive' ? 'icon/正向.svg' : 
                            'icon/中性.svg';
@@ -3952,9 +4408,11 @@ function createVoiceDetailDrawerHtml(item, allData) {
         '<span class="status-tag status-key-tag">关键反馈</span>' :
         '<span class="status-tag status-unresolved-tag">暂不解决</span>';
     
-    // 情感标签
+    // 情感标签 - 只显示纯分类值，不包含强度描述
     const emotionType = item.emotion?.type || 'neutral';
-    const emotionLabel = item.emotion?.label || '中性';
+    // 只显示纯分类值：负向、中性、正向
+    const emotionLabel = emotionType === 'negative' ? '负向' : 
+                        emotionType === 'positive' ? '正向' : '中性';
     const emotionIcon = emotionType === 'negative' ? 'icon/负向.svg' : 
                        emotionType === 'positive' ? 'icon/正向.svg' : 
                        'icon/中性.svg';
@@ -6814,7 +7272,9 @@ function createRelatedSoundItemHtml(sound, voiceData) {
     ` : `<div class="related-sound-title">${summary}</div>`;
     
     const emotionType = voiceData?.emotion?.type || 'neutral';
-    const emotionLabel = voiceData?.emotion?.label || (emotionType === 'negative' ? '负向' : emotionType === 'positive' ? '正向' : '中性');
+    // 只显示纯分类值：负向、中性、正向，不包含强度描述
+    const emotionLabel = emotionType === 'negative' ? '负向' : 
+                        emotionType === 'positive' ? '正向' : '中性';
     const emotionIcon = emotionType === 'negative' ? 'icon/负向.svg' : 
                         emotionType === 'positive' ? 'icon/正向.svg' : 
                         'icon/中性.svg';
@@ -9760,9 +10220,11 @@ function renderKanbanCard(item, index, groupType = 'status') {
             </div>
         `;
     } else {
-        // 按状态分组时，显示情感分类信息
-        const emotionLabel = item.emotion?.label || '中性';
+        // 按状态分组时，显示情感分类信息 - 只显示纯分类值，不包含强度描述
         const emotionType = item.emotion?.type || 'neutral';
+        // 只显示纯分类值：负向、中性、正向
+        const emotionLabel = emotionType === 'negative' ? '负向' : 
+                            emotionType === 'positive' ? '正向' : '中性';
         const emotionIcon = emotionType === 'negative' ? 'icon/负向.svg' : 
                            emotionType === 'positive' ? 'icon/正向.svg' : 
                            'icon/中性.svg';
@@ -10721,16 +11183,26 @@ function initializeEventListeners() {
     checkConvertButtonState();
     
     // 为系统类型复选框添加事件监听器
-    const systemTypeCheckboxes = elements.systemTypeSelect.querySelectorAll('input[type="checkbox"]');
-    systemTypeCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', debounce(saveDraft, 1000));
-    });
+    if (elements.systemTypeSelect) {
+        const systemTypeCheckboxes = elements.systemTypeSelect.querySelectorAll('input[type="checkbox"]');
+        systemTypeCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                debounce(saveDraft, 1000)();
+                checkConvertButtonState();
+            });
+        });
+    }
     
     // 为模块复选框添加事件监听器
-    const moduleCheckboxes = elements.moduleSelect.querySelectorAll('input[type="checkbox"]');
-    moduleCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', debounce(saveDraft, 1000));
-    });
+    if (elements.moduleSelect) {
+        const moduleCheckboxes = elements.moduleSelect.querySelectorAll('input[type="checkbox"]');
+        moduleCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                debounce(saveDraft, 1000)();
+                checkConvertButtonState();
+            });
+        });
+    }
     
 }
 
@@ -10981,11 +11453,14 @@ async function performConvert() {
     isConverting = true;
     if (elements.convertBtn) {
         elements.convertBtn.disabled = true;
-        elements.convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 转化中...';
+        elements.convertBtn.innerHTML = '转化中...';
     }
     
     // 禁用整个输入区域
     setInputAreaDisabled(true);
+    
+    // 创建 AbortController 用于取消请求
+    window.problemAbortController = new AbortController();
     
     // 在预览区域显示加载状态
     showPreviewLoading();
@@ -11019,6 +11494,12 @@ async function performConvert() {
         console.log('✅ 转化完成，历史记录已自动保存');
         
     } catch (error) {
+        // 如果是用户取消的请求，不显示错误提示（stopProblemConversion 已经处理了）
+        if (error.name === 'AbortError' || error.message === 'The user aborted a request.') {
+            console.log('转化已被用户取消');
+            return;
+        }
+        
         console.error('转化失败:', error);
         showNotification('转化失败，请重试', 'error');
         
@@ -11038,7 +11519,12 @@ async function performConvert() {
         isConverting = false;
         if (elements.convertBtn) {
             elements.convertBtn.disabled = false;
-            elements.convertBtn.innerHTML = '<i class="fas fa-magic"></i> 一键转化';
+            elements.convertBtn.innerHTML = '一键转化';
+        }
+        
+        // 清理 AbortController
+        if (window.problemAbortController) {
+            window.problemAbortController = null;
         }
         
         // 重新启用输入区域
@@ -11060,7 +11546,11 @@ async function convertToStandardFormat(data) {
         formData.append('user_id', getCurrentUserId());
         
         // 设置30秒超时，给LLM足够时间
-        const controller = new AbortController();
+        // 使用全局的 AbortController（如果存在），否则创建新的
+        if (!window.problemAbortController) {
+            window.problemAbortController = new AbortController();
+        }
+        const controller = window.problemAbortController;
         const timeoutId = setTimeout(() => controller.abort(), 30000);
         
         const resp = await fetch('http://localhost:8001/api/analysis/parse-feedback', {
@@ -11195,7 +11685,13 @@ async function convertToStandardFormat(data) {
             }
         }
     } catch (err) {
-        // 忽略错误，进入本地回退逻辑
+        // 如果是用户取消的请求，直接抛出错误，不进入回退逻辑
+        if (err.name === 'AbortError' || err.message === 'The user aborted a request.') {
+            console.log('用户取消了转化请求');
+            throw err;
+        }
+        
+        // 忽略其他错误，进入本地回退逻辑
         console.warn('调用后端解析失败，使用本地规则回退:', err);
         console.log('错误详情:', err.message);
         console.log('错误类型:', err.name);
@@ -12247,7 +12743,7 @@ function displayPreviewResult(result) {
                     <div class="detail-label">问题描述</div>
                     <div class="detail-value">
                         <div class="detail-display">${f.problem_description || ''}</div>
-                        <input type="text" class="detail-input detail-text" data-field="problem_description" value="${f.problem_description || ''}">
+                        <textarea class="detail-input detail-textarea" data-field="problem_description" rows="2">${f.problem_description || ''}</textarea>
                     </div>
                 </div>
                 
@@ -12255,7 +12751,7 @@ function displayPreviewResult(result) {
                     <div class="detail-label">解决方案</div>
                     <div class="detail-value">
                         <div class="detail-display">${f.solution || ''}</div>
-                        <input type="text" class="detail-input detail-text" data-field="solution" value="${f.solution || ''}">
+                        <textarea class="detail-input detail-textarea" data-field="solution" rows="2">${f.solution || ''}</textarea>
                     </div>
                 </div>
                 
@@ -12311,17 +12807,6 @@ function displayPreviewResult(result) {
                 </div>
                 
                 <div class="detail-row">
-                    <div class="detail-label">解决方式</div>
-                    <div class="detail-value">
-                        <div class="detail-display">${f.resolution_method || ''}</div>
-                        <select class="detail-input detail-select" data-field="resolution_method">
-                            <option value="体验优化" ${f.resolution_method === '体验优化' ? 'selected' : ''}>体验优化</option>
-                            <option value="需求优化" ${f.resolution_method === '需求优化' ? 'selected' : ''}>需求优化</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="detail-row">
                     <div class="detail-label">优先级</div>
                     <div class="detail-value">
                         <div class="detail-display">${f.priority || ''}</div>
@@ -12337,22 +12822,13 @@ function displayPreviewResult(result) {
                 <div class="detail-row">
                     <div class="detail-label">解决状态</div>
                     <div class="detail-value">
-                        <div class="detail-display">${f.status || ''}</div>
+                        <div class="detail-display">${normalizeResolutionStatus(f.status) || '待确认'}</div>
                         <select class="detail-input detail-select" data-field="status">
-                            <option value="待确认(未提给研发)" ${f.status === '待确认(未提给研发)' ? 'selected' : ''}>待确认(未提给研发)</option>
-                            <option value="研发中(已提给研发)" ${f.status === '研发中(已提给研发)' ? 'selected' : ''}>研发中(已提给研发)</option>
-                            <option value="待走查(已研发完成)" ${f.status === '待走查(已研发完成)' ? 'selected' : ''}>待走查(已研发完成)</option>
-                            <option value="已解决(走查完成并上线)" ${f.status === '已解决(走查完成并上线)' ? 'selected' : ''}>已解决(走查完成并上线)</option>
-                            <option value="暂不解决" ${f.status === '暂不解决' ? 'selected' : ''}>暂不解决</option>
+                            <option value="待确认" ${normalizeResolutionStatus(f.status) === '待确认' ? 'selected' : ''}>待确认</option>
+                            <option value="开发中" ${normalizeResolutionStatus(f.status) === '开发中' ? 'selected' : ''}>开发中</option>
+                            <option value="待走查" ${normalizeResolutionStatus(f.status) === '待走查' ? 'selected' : ''}>待走查</option>
+                            <option value="已解决" ${normalizeResolutionStatus(f.status) === '已解决' ? 'selected' : ''}>已解决</option>
                         </select>
-                    </div>
-                </div>
-                
-                <div class="detail-row">
-                    <div class="detail-label">期望修复版本</div>
-                    <div class="detail-value">
-                        <div class="detail-display">${f.target_version || '未定'}</div>
-                        <input type="text" class="detail-input detail-text" data-field="target_version" value="${f.target_version || '未定'}">
                     </div>
                 </div>
             </div>
@@ -12957,9 +13433,15 @@ function debounce(func, wait) {
 
 // 检查转化按钮状态
 function checkConvertButtonState() {
-    const description = elements.issueDescription.value.trim();
-    const charCount = description.length;
-    const shouldEnable = charCount > 10;
+    if (!elements.convertBtn) return;
+    
+    // 检查必填信息
+    const description = elements.issueDescription ? elements.issueDescription.value.trim() : '';
+    const selectedSystemTypes = elements.systemTypeSelect ? elements.systemTypeSelect.querySelectorAll('input[type="checkbox"]:checked') : [];
+    const selectedModules = elements.moduleSelect ? elements.moduleSelect.querySelectorAll('input[type="checkbox"]:checked') : [];
+    
+    // 必填信息：描述不为空、至少选择一个系统类型、至少选择一个模块
+    const shouldEnable = description.length > 0 && selectedSystemTypes.length > 0 && selectedModules.length > 0;
     
     // 更新按钮状态
     elements.convertBtn.disabled = !shouldEnable;
@@ -12973,7 +13455,44 @@ function checkConvertButtonState() {
         elements.convertBtn.style.opacity = '0.5';
         elements.convertBtn.style.cursor = 'not-allowed';
     }
+}
+
+// 检查原声转化按钮状态
+function checkOriginalSoundConvertButtonState() {
+    const convertBtn = document.getElementById('originalSoundConvertBtn');
+    if (!convertBtn) return;
     
+    let shouldEnable = false;
+    
+    // 根据当前输入类型检查必填信息
+    const currentInputType = OriginalSoundTemplate?.currentInputType || 'text';
+    const sourceLanguage = getSourceLanguageValue();
+    const targetLanguage = getTargetLanguageValue();
+    
+    if (currentInputType === 'text') {
+        // 文本输入类型：需要原声文本（至少5个字符）、源语言、目标语言
+        const originalSoundText = document.getElementById('originalSoundText');
+        const textValue = originalSoundText ? originalSoundText.value.trim() : '';
+        shouldEnable = textValue.length >= 5 && sourceLanguage && targetLanguage;
+    } else if (currentInputType === 'excel') {
+        // Excel输入类型：需要Excel文件、源语言、目标语言
+        const excelFileInput = document.getElementById('excelFileInput');
+        const hasExcelFile = (excelFileInput && excelFileInput.files && excelFileInput.files.length > 0) || window.selectedExcelFile;
+        shouldEnable = hasExcelFile && sourceLanguage && targetLanguage;
+    }
+    
+    // 更新按钮状态
+    convertBtn.disabled = !shouldEnable;
+    
+    if (shouldEnable) {
+        convertBtn.classList.remove('disabled');
+        convertBtn.style.opacity = '1';
+        convertBtn.style.cursor = 'pointer';
+    } else {
+        convertBtn.classList.add('disabled');
+        convertBtn.style.opacity = '0.5';
+        convertBtn.style.cursor = 'not-allowed';
+    }
 }
 
 
@@ -12985,17 +13504,21 @@ function showPreviewLoading() {
                 <i class="fas fa-brain fa-pulse"></i>
             </div>
             <div class="loading-text">正在智能分析问题...</div>
-            <div class="loading-subtitle">请稍候，我们正在为您智能转化体验问题</div>
+            <div class="loading-subtitle">请稍候，正在为您智能转化体验问题</div>
             <div class="progress-container">
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: 0%"></div>
                 </div>
             </div>
             <div class="loading-tips">
-                <div class="tip-item">💡 首次分析可能需要几秒钟，相似问题会更快</div>
-                <div class="tip-item">🚀 系统会自动缓存结果，提升后续响应速度</div>
-                <div class="tip-item">⚡ 如果等待时间过长，系统会自动降级到快速模式</div>
+                <div class="tip-item">理解您输入的内容并提炼关键信息</div>
+                <div class="tip-item">生成标题并优化"问题描述"与"解决方案"的表达</div>
+                <div class="tip-item">分析问题类型、优先级，整理为标准化表单展示</div>
             </div>
+            <button class="stop-generate-btn" onclick="stopProblemConversion()">
+                <img src="icon/停止生成.svg" alt="停止生成" class="stop-generate-icon" />
+                <span>停止生成</span>
+            </button>
         </div>
     `;
     
@@ -13042,6 +13565,170 @@ function startProgressAnimation() {
     
     // 保存定时器引用，以便后续清除
     window.progressInterval = interval;
+}
+
+// 在预览区域显示原声分析加载状态
+function showOriginalSoundLoading() {
+    const previewContent = document.getElementById('previewContent');
+    if (!previewContent) return;
+    
+    previewContent.innerHTML = `
+        <div class="preview-loading">
+            <div class="loading-spinner">
+                <i class="fas fa-brain fa-pulse"></i>
+            </div>
+            <div class="loading-text">正在智能分析原声...</div>
+            <div class="loading-subtitle">请稍候，正在为您智能分析原声内容</div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="loading-tips">
+                <div class="tip-item">接受您的转化指令并识别用户原声内容</div>
+                <div class="tip-item">发送原声分析请求至DeepSeek</div>
+                <div class="tip-item">生成翻译结果、情感分析与智能总结</div>
+            </div>
+            <button class="stop-generate-btn" onclick="stopOriginalSoundConversion()">
+                <img src="icon/停止生成.svg" alt="停止生成" class="stop-generate-icon" />
+                <span>停止生成</span>
+            </button>
+        </div>
+    `;
+    
+    // 启动原声分析进度动画
+    startOriginalSoundProgressAnimation();
+}
+
+// 更新原声分析进度
+function updateOriginalSoundProgress(message, progress) {
+    const previewContent = document.getElementById('previewContent');
+    if (!previewContent) return;
+    
+    const loadingText = previewContent.querySelector('.loading-text');
+    const progressFill = previewContent.querySelector('.progress-fill');
+    
+    if (loadingText && message) {
+        loadingText.textContent = message;
+    }
+    
+    if (progressFill && progress !== undefined) {
+        // 确保进度在0-100之间
+        const clampedProgress = Math.max(0, Math.min(100, progress));
+        // 直接设置进度，CSS transition 会处理平滑过渡
+        progressFill.style.width = clampedProgress + '%';
+        // 保存当前进度，供动画函数参考
+        window.originalSoundProgress = clampedProgress;
+    }
+    
+    // 如果进度达到100%，标记转化完成
+    if (progress >= 100) {
+        window.conversionCompleted = true;
+    }
+}
+
+    // 启动原声分析进度动画（作为备用，当没有手动更新时提供基础动画）
+function startOriginalSoundProgressAnimation() {
+    const previewContent = document.getElementById('previewContent');
+    if (!previewContent) return;
+    
+    // 初始化进度为0
+    window.originalSoundProgress = 0;
+    
+    // 这个函数主要用于初始化，实际的进度更新由 updateOriginalSoundProgress 控制
+    // 如果需要，可以在这里添加一些基础的平滑动画逻辑
+}
+
+// 停止原声转化
+function stopOriginalSoundConversion() {
+    console.log('🛑 用户点击停止生成');
+    
+    // 取消正在进行的请求
+    if (window.originalSoundAbortController) {
+        window.originalSoundAbortController.abort();
+        window.originalSoundAbortController = null;
+    }
+    
+    // 清除进度定时器
+    if (window.originalSoundProgressInterval) {
+        clearInterval(window.originalSoundProgressInterval);
+        window.originalSoundProgressInterval = null;
+    }
+    
+    // 重置转化状态
+    isConverting = false;
+    window.conversionCompleted = false;
+    window.originalSoundProgress = undefined;
+    
+    // 恢复预览区域到初始状态
+    const previewContent = document.getElementById('previewContent');
+    if (previewContent) {
+        previewContent.innerHTML = `
+            <div class="preview-empty-state" id="previewEmptyState">
+                <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
+                <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
+            </div>
+        `;
+    }
+    
+    // 隐藏预览操作按钮
+    hidePreviewActions();
+    
+    // 清空全局变量
+    window.currentOriginalSoundResult = null;
+    
+    // 显示提示
+    showNotification('已停止生成，页面已恢复', 'info');
+    
+    console.log('✅ 已停止生成并恢复页面状态');
+}
+
+// 停止走查问题转化
+function stopProblemConversion() {
+    console.log('🛑 用户点击停止生成（走查问题）');
+    
+    // 取消正在进行的请求
+    if (window.problemAbortController) {
+        window.problemAbortController.abort();
+        window.problemAbortController = null;
+    }
+    
+    // 清除进度定时器
+    if (window.progressInterval) {
+        clearInterval(window.progressInterval);
+        window.progressInterval = null;
+    }
+    
+    // 重置转化状态
+    isConverting = false;
+    window.conversionCompleted = false;
+    
+    // 恢复预览区域到初始状态
+    if (elements.previewContent) {
+        elements.previewContent.innerHTML = `
+            <div class="preview-empty-state" id="previewEmptyState">
+                <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
+                <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
+            </div>
+        `;
+    }
+    
+    // 隐藏预览操作按钮
+    hidePreviewActions();
+    
+    // 恢复转化按钮状态
+    if (elements.convertBtn) {
+        elements.convertBtn.disabled = false;
+        elements.convertBtn.innerHTML = '一键转化';
+    }
+    
+    // 重新启用输入区域
+    setInputAreaDisabled(false);
+    
+    // 显示提示
+    showNotification('已停止生成，页面已恢复', 'info');
+    
+    console.log('✅ 已停止生成并恢复页面状态（走查问题）');
 }
 
 // 重新生成内容
@@ -13166,7 +13853,7 @@ function buildVoicePoolEntryFromResult(result = {}) {
     const standardFormat = result.standard_format || result.standardFormat || {};
     const emotion = buildEmotionMeta(analysis);
     const summary = analysis.ai_optimized_summary || standardFormat.summary || result.user_input || standardFormat.title || '未命名原声';
-    const moduleName = standardFormat.module || analysis.module || '其他';
+    const moduleName = standardFormat.module || analysis.module || '--';
     const originalText = result.user_input || result.transcribed_text || standardFormat.problem_description || '';
     const translation = analysis.original_translation || standardFormat.translation || '';
     const keyPointsValue = normalizeKeyPointsValue(analysis.key_points);
@@ -13189,7 +13876,6 @@ function buildVoicePoolEntryFromResult(result = {}) {
         sentimentAnalysis: analysis.sentiment_analysis || '',
         sentiment: analysis.sentiment_analysis || '',
         sentimentClassification: emotion.type,
-        sentimentIntensity: emotion.level,
         transcribedText: result.transcribed_text || '',
         userInput: result.user_input || '',
         createdAt: new Date().toISOString()
@@ -13357,7 +14043,7 @@ function clearAIVoiceInputAndPreview() {
         previewContent.innerHTML = `
             <div class="preview-empty-state" id="previewEmptyState">
                 <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
             </div>
         `;
     }
@@ -13484,7 +14170,7 @@ function clearAIProblemInputAndPreview() {
         previewContent.innerHTML = `
             <div class="preview-empty-state" id="previewEmptyState">
                 <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
             </div>
         `;
     }
@@ -13504,6 +14190,9 @@ function clearAIProblemInputAndPreview() {
             TemplateStateManager.states.design.uploadedFiles = [];
         }
     }
+    
+    // 更新转化按钮状态
+    checkConvertButtonState();
 }
 
 // 恢复用户上次选择的输入类型tab
@@ -13841,7 +14530,6 @@ function extractFormContentValues(previewContent) {
             { selector: '.value.key-points', label: '重点分析' },        // 6
             { selector: '.value.translation', label: '原声翻译' },        // 7
             { selector: '.value.sentiment', label: '情感分类' },          // 2
-            { selector: '.value.intensity', label: '情感强度' },         // 3
             { selector: '.value.analysis', label: '情感分析' }            // 4
         ];
         
@@ -15452,10 +16140,6 @@ function createOriginalSoundDetailPage(record, contentDetails, relatedImages) {
                                                 ${getSentimentDisplayHTML(analysis.sentiment_classification || '中性')}
                                             </div>
                                             <div class="analysis-item">
-                                                <span class="analysis-label">情感强度：</span>
-                                                <span class="analysis-value">${analysis.sentiment_intensity || '中等'}</span>
-                                            </div>
-                                            <div class="analysis-item">
                                                 <span class="analysis-label">情感分析：</span>
                                                 <div class="analysis-value">${analysis.sentiment_analysis || '暂无情感分析数据'}</div>
                                             </div>
@@ -15519,10 +16203,6 @@ function createOriginalSoundDetailPage(record, contentDetails, relatedImages) {
                     <div class="analysis-item">
                         <span class="analysis-label">情感分类</span>
                         ${getSentimentDisplayHTML(analysisResult.sentiment_classification || '中性')}
-                    </div>
-                    <div class="analysis-item">
-                        <span class="analysis-label">情感强度</span>
-                        <span class="analysis-value intensity ${analysisResult.sentiment_intensity || 'medium'}">${analysisResult.sentiment_intensity || '中等'}</span>
                     </div>
                     <div class="analysis-item full-width">
                         <span class="analysis-label">情感分析</span>
@@ -16413,7 +17093,7 @@ function startNewSession() {
         elements.previewContent.innerHTML = `
         <div class="preview-empty-state" id="previewEmptyState">
             <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-            <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+            <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
         </div>
     `;
     }
@@ -16478,6 +17158,17 @@ function startOriginalSoundNewSession() {
     console.log('开始用户原声清洗模板新会话...');
     
     try {
+        // 无论当前是什么输入类型，都清空用户原声输入框（包括快速试用填充的内容）
+        const originalSoundText = document.getElementById('originalSoundText');
+        if (originalSoundText) {
+            originalSoundText.value = '';
+            // 触发input事件，确保字符计数等更新
+            originalSoundText.dispatchEvent(new Event('input', { bubbles: true }));
+            console.log('已清空用户原声文本输入（包括快速试用填充的内容）');
+        } else {
+            console.log('未找到用户原声文本输入框');
+        }
+        
         // 检测当前激活的输入类型标签
         const activeInputTab = document.querySelector('.input-type-tab.active');
         const currentInputType = activeInputTab ? activeInputTab.getAttribute('data-type') : 'text';
@@ -16486,15 +17177,6 @@ function startOriginalSoundNewSession() {
         
         // 根据当前激活的标签类型，只清空对应的内容
         if (currentInputType === 'text') {
-            // 只清空文本原声相关内容
-            const originalSoundText = document.getElementById('originalSoundText');
-            if (originalSoundText) {
-                originalSoundText.value = '';
-                console.log('已清空用户原声文本输入');
-            } else {
-                console.log('未找到用户原声文本输入框');
-            }
-            
             // 清空文本原声的预览内容
             if (typeof OriginalSoundTemplate !== 'undefined') {
                 OriginalSoundTemplate.previewContent.text = null;
@@ -16561,7 +17243,7 @@ function startOriginalSoundNewSession() {
             elements.previewContent.innerHTML = `
                 <div class="preview-empty-state" id="previewEmptyState">
                     <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                    <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                    <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
                 </div>
             `;
             console.log('已重置预览内容');
@@ -16581,6 +17263,9 @@ function startOriginalSoundNewSession() {
         } else {
             console.log('未找到转化按钮');
         }
+        
+        // 检查并更新原声转化按钮状态（因为输入框已清空，按钮应该被禁用）
+        checkOriginalSoundConvertButtonState();
         
         // 重置转换状态
         isConverting = false;
@@ -16650,6 +17335,9 @@ const OriginalSoundTemplate = {
         
         // 标记为已初始化
         this.initialized = true;
+        
+        // 初始化时检查按钮状态
+        checkOriginalSoundConvertButtonState();
     },
     
     // 初始化事件监听器
@@ -16673,6 +17361,29 @@ const OriginalSoundTemplate = {
         if (originalSoundText) {
             originalSoundText.addEventListener('input', () => {
                 this.updateCharCount();
+                checkOriginalSoundConvertButtonState();
+            });
+        }
+        
+        // 语言选择监听
+        const sourceLanguageSelect = document.getElementById('sourceLanguageSelect');
+        const targetLanguageSelect = document.getElementById('targetLanguageSelect');
+        if (sourceLanguageSelect) {
+            sourceLanguageSelect.addEventListener('change', () => {
+                checkOriginalSoundConvertButtonState();
+            });
+        }
+        if (targetLanguageSelect) {
+            targetLanguageSelect.addEventListener('change', () => {
+                checkOriginalSoundConvertButtonState();
+            });
+        }
+        
+        // Excel文件选择监听
+        const excelFileInput = document.getElementById('excelFileInput');
+        if (excelFileInput) {
+            excelFileInput.addEventListener('change', () => {
+                checkOriginalSoundConvertButtonState();
             });
         }
         
@@ -16868,6 +17579,9 @@ const OriginalSoundTemplate = {
             console.error('找不到语言切换卡片');
         }
         
+        // 切换输入类型后检查按钮状态
+        checkOriginalSoundConvertButtonState();
+        
         // 恢复目标输入类型的状态
         TemplateStateManager.restoreState('feedback', inputType);
     },
@@ -16888,7 +17602,7 @@ const OriginalSoundTemplate = {
             previewContent.innerHTML = `
                 <div class="preview-empty-state" id="previewEmptyState">
                     <img src="image/预览空占位.png" alt="预览空状态" class="empty-state-image" />
-                    <p class="empty-state-text">转化好的内容将会按照标准化的模板在此处展示</p>
+                    <p class="empty-state-text">一键转化得到标准化表单，转化完成后您可以直接保存至本系统或复制至Cooper中</p>
                 </div>
             `;
             console.log(`restorePreviewContent: 显示${inputType}类型的占位符`);
@@ -17241,9 +17955,45 @@ const OriginalSoundTemplate = {
     async convertOriginalSound() {
         if (isConverting) return;
         
+        // 验证必填信息
+        const currentInputType = this.currentInputType || 'text';
+        const sourceLanguage = getSourceLanguageValue();
+        const targetLanguage = getTargetLanguageValue();
+        
+        if (!sourceLanguage || !targetLanguage) {
+            showNotification('请选择源语言和目标语言', 'error');
+            return;
+        }
+        
+        if (currentInputType === 'text') {
+            const originalSoundText = document.getElementById('originalSoundText');
+            const textValue = originalSoundText ? originalSoundText.value.trim() : '';
+            if (!textValue || textValue.length < 5) {
+                showNotification('请输入至少5个字符的用户原声内容', 'error');
+                return;
+            }
+        } else if (currentInputType === 'excel') {
+            const excelFileInput = document.getElementById('excelFileInput');
+            const hasExcelFile = (excelFileInput && excelFileInput.files && excelFileInput.files.length > 0) || window.selectedExcelFile;
+            if (!hasExcelFile) {
+                showNotification('请选择Excel文件', 'error');
+                return;
+            }
+        }
+        
         try {
             isConverting = true;
-            showLoadingModal('正在处理原声内容，请稍候...');
+            // 创建 AbortController 用于取消请求
+            window.originalSoundAbortController = new AbortController();
+            
+            // 在预览区域显示loading，而不是模态框
+            showOriginalSoundLoading();
+            // 重置转化完成标志
+            window.conversionCompleted = false;
+            // 清除之前的进度定时器
+            if (window.originalSoundProgressInterval) {
+                clearInterval(window.originalSoundProgressInterval);
+            }
             
             let result;
             
@@ -17258,6 +18008,15 @@ const OriginalSoundTemplate = {
                 hasSuccess: result && result.success,
                 resultType: typeof result
             });
+            
+            // 更新进度到100%
+            updateOriginalSoundProgress('分析完成！', 100);
+            
+            // 标记转化完成
+            window.conversionCompleted = true;
+            
+            // 等待一小段时间让用户看到100%进度
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             if (result && result.success) {
                 console.log('✅ 调用displayOriginalSoundResult');
@@ -17278,11 +18037,23 @@ const OriginalSoundTemplate = {
             }
             
         } catch (error) {
+            // 如果是用户主动取消，不显示错误提示
+            if (error.name === 'AbortError') {
+                console.log('🛑 用户取消了原声处理');
+                return;
+            }
             console.error('原声处理失败:', error);
             showNotification('处理失败: ' + error.message, 'error');
         } finally {
             isConverting = false;
-            hideLoadingModal();
+            // 清除进度定时器
+            if (window.originalSoundProgressInterval) {
+                clearInterval(window.originalSoundProgressInterval);
+                window.originalSoundProgressInterval = null;
+            }
+            window.conversionCompleted = false;
+            // 清除 AbortController
+            window.originalSoundAbortController = null;
         }
     },
     
@@ -17300,18 +18071,48 @@ const OriginalSoundTemplate = {
             throw new Error('请输入至少5个字符的用户原声内容');
         }
         
+        // 初始化进度
+        window.originalSoundProgress = 0;
+        updateOriginalSoundProgress('正在准备分析...', 5);
+        
         const formData = new FormData();
         formData.append('user_input', userInput);
         formData.append('source_language', sourceLanguage);
         formData.append('target_language', targetLanguage);
         formData.append('user_id', getCurrentUserId());
         
+        // 开始API调用
+        updateOriginalSoundProgress('正在调用分析服务...', 15);
+        
         const response = await fetch('http://localhost:8001/api/original-sound/process-text', {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: window.originalSoundAbortController?.signal
         });
         
-        return await response.json();
+        // API调用中，更新进度
+        updateOriginalSoundProgress('正在翻译原声内容...', 30);
+        
+        // 等待响应
+        const result = await response.json();
+        
+        // 处理响应中，更新进度
+        updateOriginalSoundProgress('正在分析情感倾向...', 60);
+        
+        // 模拟处理过程（检查是否被取消）
+        if (window.originalSoundAbortController?.signal.aborted) {
+            throw new DOMException('用户取消了操作', 'AbortError');
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        updateOriginalSoundProgress('正在提炼核心主旨...', 80);
+        
+        if (window.originalSoundAbortController?.signal.aborted) {
+            throw new DOMException('用户取消了操作', 'AbortError');
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        updateOriginalSoundProgress('正在提取关键要点...', 90);
+        
+        return result;
     },
     
     
@@ -17342,18 +18143,26 @@ const OriginalSoundTemplate = {
             throw new Error('请选择Excel文件');
         }
         
+        // 初始化进度
+        window.originalSoundProgress = 0;
+        updateOriginalSoundProgress('正在读取Excel文件...', 5);
+        
         // 计算文件哈希值
         const fileHash = await this.calculateFileHash(excelFile);
         console.log('🔍 文件哈希值:', fileHash);
+        
+        updateOriginalSoundProgress('正在检查缓存...', 10);
         
         // 检查缓存是否有效
         if (this.isCacheValid(excelFile, sourceLanguage, targetLanguage) && 
             this.excelAnalysisCache.fileHash === fileHash) {
             console.log('✅ 使用缓存的分析结果');
+            updateOriginalSoundProgress('使用缓存结果...', 95);
             return this.excelAnalysisCache.analysisResults;
         }
         
         console.log('🔄 缓存无效，开始新的分析...');
+        updateOriginalSoundProgress('正在上传文件...', 15);
         
         const formData = new FormData();
         formData.append('excel_file', excelFile);
@@ -17361,9 +18170,12 @@ const OriginalSoundTemplate = {
         formData.append('target_language', targetLanguage);
         formData.append('user_id', getCurrentUserId());
         
+        updateOriginalSoundProgress('正在调用分析服务...', 20);
+        
         const response = await fetch('http://localhost:8001/api/original-sound/process-excel', {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: window.originalSoundAbortController?.signal
         });
 
         if (!response.ok) {
@@ -17372,8 +18184,38 @@ const OriginalSoundTemplate = {
             throw new Error(msg || 'Excel处理失败');
         }
 
+        // 开始处理响应
+        updateOriginalSoundProgress('正在处理Excel数据...', 40);
+        
         // 解析JSON响应
         const result = await response.json();
+        
+        // 根据处理结果更新进度
+        if (result && result.analysis && result.analysis.total_count) {
+            const totalCount = result.analysis.total_count;
+            updateOriginalSoundProgress(`正在分析 ${totalCount} 条原声...`, 60);
+        } else {
+            updateOriginalSoundProgress('正在分析原声内容...', 60);
+        }
+        
+        // 模拟处理过程（检查是否被取消）
+        if (window.originalSoundAbortController?.signal.aborted) {
+            throw new DOMException('用户取消了操作', 'AbortError');
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+        updateOriginalSoundProgress('正在翻译原声内容...', 75);
+        
+        if (window.originalSoundAbortController?.signal.aborted) {
+            throw new DOMException('用户取消了操作', 'AbortError');
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+        updateOriginalSoundProgress('正在分析情感倾向...', 85);
+        
+        if (window.originalSoundAbortController?.signal.aborted) {
+            throw new DOMException('用户取消了操作', 'AbortError');
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+        updateOriginalSoundProgress('正在生成分析结果...', 90);
         
         // 缓存分析结果
         this.excelAnalysisCache = {
@@ -17439,10 +18281,6 @@ const OriginalSoundTemplate = {
                     <div class="analysis-item">
                         <span class="label">情感分类</span>
                         ${getSentimentDisplayHTML(analysis.sentiment_classification || '中性')}
-                    </div>
-                    <div class="analysis-item">
-                        <span class="label">情感强度</span>
-                        <span class="value intensity ${analysis.sentiment_intensity || '中等'}">${analysis.sentiment_intensity || '中等'}</span>
                     </div>
                     <div class="analysis-item">
                         <span class="label">情感分析</span>
@@ -17535,10 +18373,6 @@ const OriginalSoundTemplate = {
                     <div class="analysis-item">
                         <span class="label">情感分类</span>
                         ${getSentimentDisplayHTML(itemAnalysis.sentiment_classification || '中性')}
-                    </div>
-                    <div class="analysis-item">
-                        <span class="label">情感强度</span>
-                        <span class="value intensity ${itemAnalysis.sentiment_intensity || '中等'}">${itemAnalysis.sentiment_intensity || '中等'}</span>
                     </div>
                     <div class="analysis-item">
                         <span class="label">情感分析</span>
@@ -17695,7 +18529,6 @@ async function generateExcelFromCache(analysisResults, originalFileName) {
                     "核心主旨": analysis.ai_optimized_summary || "暂无核心主旨数据",
                     "重点分析": analysis.key_points || "暂无重点分析数据",
                     "情感分类": analysis.sentiment_classification || "中性",
-                    "情感强度": analysis.sentiment_intensity || "中等",
                     "情感分析": analysis.sentiment_analysis || "暂无情感分析数据"
                 });
             });
@@ -17710,7 +18543,6 @@ async function generateExcelFromCache(analysisResults, originalFileName) {
                     "核心主旨": analysis.ai_optimized_summary || "暂无核心主旨数据",
                     "重点分析": analysis.key_points || "暂无重点分析数据",
                     "情感分类": analysis.sentiment_classification || "中性",
-                    "情感强度": analysis.sentiment_intensity || "中等",
                     "情感分析": analysis.sentiment_analysis || "暂无情感分析数据"
                 });
             });
@@ -17724,7 +18556,6 @@ async function generateExcelFromCache(analysisResults, originalFileName) {
                 "核心主旨": analysis.ai_optimized_summary || "暂无核心主旨数据",
                 "重点分析": analysis.key_points || "暂无重点分析数据",
                 "情感分类": analysis.sentiment_classification || "中性",
-                "情感强度": analysis.sentiment_intensity || "中等",
                 "情感分析": analysis.sentiment_analysis || "暂无情感分析数据"
             });
         }
@@ -17763,7 +18594,6 @@ async function generateExcelFromCache(analysisResults, originalFileName) {
             { wch: 20 }, // 核心主旨
             { wch: 25 }, // 重点分析
             { wch: 12 }, // 情感分类
-            { wch: 12 }, // 情感强度
             { wch: 30 }  // 情感分析
         ];
         ws['!cols'] = colWidths;

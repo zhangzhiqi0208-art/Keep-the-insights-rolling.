@@ -1541,7 +1541,7 @@ body.drafts-page .drafts-layout {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 108px;
+    height: 80px;
     flex-shrink: 0;
     padding: 0;
     margin: 0;
@@ -1574,6 +1574,8 @@ body.drafts-page .drafts-layout {
     justify-content: center;
     padding: 60px 20px;
     text-align: center;
+    flex: 1;
+    min-height: 100%;
 }
 
 .loading-spinner {
@@ -1605,7 +1607,7 @@ body.drafts-page .drafts-layout {
 /* 进度条容器 */
 .progress-container {
     width: 100%;
-    max-width: 300px;
+    max-width: 400px;
     margin-top: 16px;
 }
 
@@ -1621,7 +1623,7 @@ body.drafts-page .drafts-layout {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #1890ff, #40a9ff);
+    background: linear-gradient(90deg, #A794FF, #BEB0FF, #D7FE03);
     border-radius: 4px;
     transition: width 0.3s ease;
     position: relative;
@@ -1751,6 +1753,16 @@ body.drafts-page .drafts-layout {
     align-items: flex-start !important;
 }
 
+/* AI录入原声页：情感分类字段的sentiment-display左对齐 */
+.result-section .analysis-item:has(.sentiment-display) {
+    justify-content: flex-start !important;
+}
+
+.result-section .analysis-item .sentiment-display {
+    margin-left: 0;
+    align-self: flex-start;
+}
+
 .detail-row {
     display: flex;
     justify-content: space-between;
@@ -1788,6 +1800,7 @@ body.drafts-page .drafts-layout {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
+    overflow: visible;
 }
 
 
@@ -1811,6 +1824,12 @@ body.drafts-page .drafts-layout {
     margin: 0;
     box-sizing: border-box;
     height: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 /* 确保编辑控件与显示内容完全重叠 */
@@ -1821,6 +1840,7 @@ body.drafts-page .drafts-layout {
     left: 0;
     right: 0;
     bottom: 0;
+    min-height: inherit;
 }
 
 .detail-input:focus {
@@ -1834,6 +1854,11 @@ body.drafts-page .drafts-layout {
     opacity: 1;
     background: transparent;
     border: none;
+    height: 100%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .detail-row:hover .detail-input:focus {
@@ -1843,33 +1868,45 @@ body.drafts-page .drafts-layout {
 
 .detail-row:hover .detail-display {
     opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
 }
 
 /* 确保编辑控件在悬停和激活时保持正确尺寸 */
 .detail-row:hover .detail-text,
 .detail-row:focus-within .detail-text {
     min-height: 32px;
-    height: auto;
+    height: 100%;
     padding: 6px 8px;
     line-height: 20px;
     font-size: 14px;
     color: #666;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
     white-space: pre-wrap;
     resize: none;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
 }
 
 .detail-row:hover .detail-textarea,
 .detail-row:focus-within .detail-textarea {
     min-height: 32px;
-    padding: 6px 8px !important;
-    height: auto;
+    padding: 6px 8px;
+    height: 100%;
     line-height: 20px;
     font-size: 14px;
     color: #666;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
     white-space: pre-wrap;
     resize: none;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
 }
 
 .detail-row:hover .detail-select,
@@ -1903,7 +1940,7 @@ body.drafts-page .drafts-layout {
 /* 文本输入框 */
 .detail-text {
     min-height: 32px;
-    height: auto;
+    height: 100%;
     padding: 6px 8px;
     line-height: 20px;
     border: none;
@@ -1916,10 +1953,16 @@ body.drafts-page .drafts-layout {
     top: 0;
     left: 0;
     right: 0;
+    bottom: 0;
     text-align: left;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
     white-space: pre-wrap;
     resize: none;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
 }
 
 /* 文本域 */
@@ -1933,16 +1976,22 @@ body.drafts-page .drafts-layout {
     background: transparent;
     font-size: 14px;
     color: #666;
-    height: auto;
+    height: 100%;
     width: 100%;
     box-sizing: border-box;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
+    bottom: 0;
     text-align: left;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
     white-space: pre-wrap;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
 }
 
 /* 下拉选择框 */
@@ -2028,7 +2077,31 @@ body.drafts-page .drafts-layout {
     height: 16px !important;
     margin: 0 !important;
     cursor: pointer !important;
-    accent-color: #1890ff !important;
+    accent-color: #000000 !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 1px solid #d9d9d9 !important;
+    border-radius: 2px !important;
+    background-color: #ffffff !important;
+    position: relative !important;
+}
+
+.detail-checkbox-item input[type="checkbox"]:checked {
+    accent-color: #000000 !important;
+    background-color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.detail-checkbox-item input[type="checkbox"]:checked::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 2px !important;
+    left: 5px !important;
+    width: 4px !important;
+    height: 8px !important;
+    border: solid #ffffff !important;
+    border-width: 0 2px 2px 0 !important;
+    transform: rotate(45deg) !important;
 }
 
 .detail-checkbox-label {
@@ -2053,6 +2126,10 @@ body.drafts-page .drafts-layout {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    overflow: visible;
 }
 
 /* 默认显示内容 */
@@ -2062,13 +2139,15 @@ body.drafts-page .drafts-layout {
     line-height: 20px;
     padding: 6px 8px;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
     white-space: pre-wrap;
     box-sizing: border-box;
-    min-height: 44px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
+    min-height: 32px;
+    display: block;
     text-align: left;
+    position: relative;
+    z-index: 1;
 }
 
 
@@ -2597,24 +2676,95 @@ body.drafts-page .drafts-layout {
 
 /* 优化加载体验的CSS样式 */
 .loading-tips {
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(24, 144, 255, 0.05);
+    margin-top: 0px;
+    padding: 20px;
+    background: #FFFFFF(24, 144, 255, 0.05);
+    border-radius: 16px;
+    position: relative;
+    border: none;
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.loading-tips::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     border-radius: 8px;
-    border-left: 3px solid #1890ff;
+    padding: 1px;
+    background: linear-gradient(to bottom, #D9D9DE 0%, rgba(217, 217, 222, 0) 100%);
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.loading-tips > * {
+    position: relative;
+    z-index: 1;
 }
 
 .tip-item {
-    font-size: 13px;
-    color: #666;
+    font-size: 14px;
+    color: #000000;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 16px;
 }
 
 .tip-item:last-child {
     margin-bottom: 0;
+}
+
+/* 停止生成按钮样式 */
+.stop-generate-btn {
+    margin-top: 24px;
+    padding: 8px 12px;
+    background: #fff;
+    color: #000000;
+    border: 1px solid #D9D9DE;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.stop-generate-btn:hover {
+    background: #f5f5f5;
+    border-color: #999;
+    color: #333;
+}
+
+.stop-generate-btn:active {
+    background: #e8e8e8;
+    transform: translateY(1px);
+}
+
+.stop-generate-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    flex-shrink: 0;
 }
 
 
@@ -2669,9 +2819,15 @@ body.drafts-page .drafts-layout {
 .preview-loading {
     text-align: center;
     padding: 40px 20px;
-    background: #fafafa;
-    border-radius: 12px;
-    border: 1px solid #e8e8e8;
+    background: transparent;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 100%;
 }
 
 .loading-spinner i {
@@ -2690,7 +2846,7 @@ body.drafts-page .drafts-layout {
 .loading-subtitle {
     font-size: 14px;
     color: #666;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
 }
 
 
@@ -2886,7 +3042,7 @@ body.drafts-page .drafts-layout {
 
 .empty-state-image {
     width: 392px;
-    height: 300px;
+    height: auto;
     object-fit: contain;
     display: block;
     margin-bottom: 40px;
@@ -2936,8 +3092,8 @@ body.drafts-page .drafts-layout {
 }
 
 .empty-tips .tip-item {
-    font-size: 13px;
-    color: #999;
+    font-size: 14px;
+    color: #000000;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4186,11 +4342,11 @@ body.drafts-page .drafts-layout {
 }
 
 .home-title {
-    font-size: 28px;
-    line-height: 40px;
-    font-weight: 600;
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: bold;
     color: #000;
-    margin-bottom: 4px;
+    margin-bottom: 0px;
     letter-spacing: -0.3px;
 }
 
